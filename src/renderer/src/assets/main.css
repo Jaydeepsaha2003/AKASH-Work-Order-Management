@@ -50,6 +50,9 @@ button {
   .app-gradient {
     background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 45%, #8b5cf6 100%);
   }
+  .sidebar-bg {
+    background: linear-gradient(180deg, #1c1636 0%, #0d0a1a 100%);
+  }
   .card {
     @apply rounded-2xl border border-[var(--border)] bg-white shadow-card;
   }
