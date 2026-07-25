@@ -52,7 +52,9 @@ const api = {
     setActive: (id: number) => ipcRenderer.invoke('company:setActive', { id })
   },
   session: {
-    setUser: (username: string) => ipcRenderer.invoke('session:setUser', { username })
+    get: () => ipcRenderer.invoke('session:get'),
+    set: (username: string) => ipcRenderer.invoke('session:set', { username }),
+    clear: () => ipcRenderer.invoke('session:clear')
   },
   activity: {
     list: () => ipcRenderer.invoke('activity:list'),

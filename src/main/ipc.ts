@@ -27,8 +27,8 @@ import {
   deleteCompany,
   setActiveCompany
 } from './company'
-import { setCurrentUser } from './currentUser'
 import { logActivity, listActivity, clearActivity } from './activity'
+import { getSessionUser, setSessionUser, clearSessionUser } from './session'
 
 const money = (v: unknown): string => {
   const n = typeof v === 'number' ? v : parseFloat(String(v ?? ''))
@@ -110,11 +110,10 @@ export function registerIpc(): void {
     })
   }
 
-  // Session (who is acting — for the activity log)
-  handle('session:setUser', (a) => {
-    setCurrentUser(a.username)
-    return { ok: true }
-  })
+  // Session — persisted in the DB so login survives restarts & updates
+  handle('session:get', () => getSessionUser())
+  handle('session:set', (a) => setSessionUser(a.username))
+  handle('session:clear', () => clearSessionUser())
 
   // Auth
   handle('auth:login', (a) => verifyLogin(a.username, a.password))

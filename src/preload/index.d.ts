@@ -75,7 +75,9 @@ export interface Api {
     setActive: (id: number) => Promise<Res>
   }
   session: {
-    setUser: (username: string) => Promise<Res>
+    get: () => Promise<AuthUser | null>
+    set: (username: string) => Promise<Res>
+    clear: () => Promise<Res>
   }
   activity: {
     list: () => Promise<ActivityRow[]>

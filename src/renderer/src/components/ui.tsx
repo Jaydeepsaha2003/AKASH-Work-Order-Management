@@ -55,10 +55,8 @@ export function NumberInput({
   )
 }
 
-// Date input: user types freely, on blur it normalises to dd-MMM-yy for display.
-// Stores ISO via onISO.
 // Date field: always displays dd-mm-yyyy (Calibri), typeable, with a calendar
-// button that opens the native date picker. Stores/reads ISO yyyy-mm-dd.
+// icon you click to open the native date picker. Stores/reads ISO yyyy-mm-dd.
 export function DateInput({
   iso,
   onISO,
@@ -71,7 +69,6 @@ export function DateInput({
   className?: string
 }): React.JSX.Element {
   const [text, setText] = useState(formatDate(iso))
-  const dateRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
     setText(formatDate(iso))
   }, [iso])
@@ -91,18 +88,10 @@ export function DateInput({
     }
   }
 
-  const openPicker = (): void => {
-    try {
-      dateRef.current?.showPicker?.()
-    } catch {
-      /* ignore */
-    }
-  }
-
   return (
     <div className="relative">
       <input
-        className={cn('input tabular pr-9', className, readOnlyLook && 'input-readonly')}
+        className={cn('input tabular pr-10', className, readOnlyLook && 'input-readonly')}
         value={text}
         placeholder="dd-mm-yyyy"
         readOnly={readOnlyLook}
@@ -113,26 +102,19 @@ export function DateInput({
         }}
       />
       {!readOnlyLook && (
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={openPicker}
-          title="Open calendar"
-          className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-brand-600"
-        >
-          <CalendarDays className="h-[18px] w-[18px]" />
-        </button>
+        // A transparent native date input sits over the calendar icon, so clicking it
+        // reliably opens the system picker; the icon shows behind it.
+        <span className="absolute right-1 top-1/2 flex h-7 w-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-400">
+          <CalendarDays className="pointer-events-none h-[18px] w-[18px]" />
+          <input
+            type="date"
+            title="Open calendar"
+            value={iso || ''}
+            onChange={(e) => onISO(e.target.value)}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          />
+        </span>
       )}
-      {/* hidden native date input drives the calendar popup */}
-      <input
-        ref={dateRef}
-        type="date"
-        tabIndex={-1}
-        aria-hidden="true"
-        value={iso || ''}
-        onChange={(e) => onISO(e.target.value)}
-        className="pointer-events-none absolute bottom-0 left-3 h-0 w-0 opacity-0"
-      />
     </div>
   )
 }

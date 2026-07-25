@@ -16,26 +16,29 @@ import ActivityLog from './pages/ActivityLog'
 import Sidebar from './components/Sidebar'
 import UpdateBanner from './components/UpdateBanner'
 import { PAGE_META } from './components/nav'
-import { getSession, setSession, clearSession } from './lib/session'
 
 export default function App(): React.JSX.Element {
-  const [user, setUserState] = useState<AuthUser | null>(() => getSession())
+  const [user, setUserState] = useState<AuthUser | null>(null)
+  const [ready, setReady] = useState(false)
   const [page, setPage] = useState<Page>('dashboard')
   const [companies, setCompanies] = useState<Company[]>([])
   const [activeCompany, setActiveCompany] = useState<Company | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  // tell the main process who is acting (for the activity log), incl. on a restored session
+  // Restore the persisted session from the main process on startup
   useEffect(() => {
-    if (user) window.api?.session?.setUser(user.username)
-  }, [user])
+    window.api.session
+      .get()
+      .then((u) => setUserState(u))
+      .finally(() => setReady(true))
+  }, [])
 
   const setUser = (u: AuthUser): void => {
-    setSession(u)
+    window.api.session.set(u.username)
     setUserState(u)
   }
   const logout = (): void => {
-    clearSession()
+    window.api.session.clear()
     setUserState(null)
   }
 
@@ -56,6 +59,19 @@ export default function App(): React.JSX.Element {
     await window.api.company.setActive(id)
     await loadCompanies()
     setRefreshKey((k) => k + 1) // remount current page so it refetches scoped data
+  }
+
+  if (!ready) {
+    return (
+      <div className="app-gradient flex h-screen w-screen items-center justify-center text-white">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-2xl font-bold backdrop-blur">
+            A
+          </div>
+          <span className="font-heading text-xl font-semibold tracking-wide">AKASH</span>
+        </div>
+      </div>
+    )
   }
 
   if (!user) {

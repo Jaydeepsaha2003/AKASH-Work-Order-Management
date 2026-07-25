@@ -1,6 +1,6 @@
 {
   "name": "akash-work-order",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "AKASH Work Order Management System — desktop app",
   "author": "Akash",
   "main": "./out/main/index.js",

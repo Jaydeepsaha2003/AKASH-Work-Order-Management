@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   TrendingUp,
-  Receipt,
+  Landmark,
   Wallet,
   FileText,
   CalendarClock,
@@ -102,34 +102,27 @@ export default function Dashboard({
   const m = useMemo(() => {
     const turnover = inRange.reduce((s, r) => s + r.gross_value, 0) // excl GST
     const gst = inRange.reduce((s, r) => s + r.gst_on_gross, 0)
-    const landed = inRange.reduce((s, r) => s + r.total_amt, 0)
+    const landed = inRange.reduce((s, r) => s + r.total_amt, 0) // incl GST
+    const net = inRange.reduce((s, r) => s + r.net_amount, 0) // received after deductions
     const cancelled = inRange.filter((r) => (r.wo_status || '').toLowerCase() === 'cancelled')
     const received = inRange.filter((r) => (r.wo_status || '').toLowerCase() === 'received')
     const created = inRange.filter((r) => (r.wo_status || '').toLowerCase() === 'created')
-
-    // current calendar month invoices (independent of the range filter)
-    const mr = monthRange()
-    const monthRows = rows.filter(
-      (r) => r.invoice_date && r.invoice_date >= mr.from && r.invoice_date <= mr.to
-    )
-    const monthCount = monthRows.length
-    const monthValueExGst = monthRows.reduce((s, r) => s + r.gross_value, 0)
 
     // SD / HSE / PRS pending till date (all-time outstanding)
     const sd = out.reduce((s, o) => s + o.sd_balance, 0)
     const hse = out.reduce((s, o) => s + o.hse_balance, 0)
     const prs = out.reduce((s, o) => s + o.prs_balance, 0)
 
-    // Turnover by financial year (all data)
+    // Turnover by financial year (within the selected date range)
     const byFy = new Map<string, number>()
-    for (const r of rows) byFy.set(r.fin_year, (byFy.get(r.fin_year) || 0) + r.gross_value)
+    for (const r of inRange) byFy.set(r.fin_year, (byFy.get(r.fin_year) || 0) + r.gross_value)
     const fyData = [...byFy.entries()]
       .filter(([k]) => k)
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([label, value]) => ({ label, value }))
 
     // Pending invoices (status Created) with days pending, most overdue first
-    const pending = rows
+    const pending = inRange
       .filter((r) => (r.wo_status || '').toLowerCase() === 'created')
       .map((r) => ({ r, days: daysSince(r.invoice_date) ?? 0 }))
       .sort((a, b) => b.days - a.days)
@@ -140,11 +133,10 @@ export default function Dashboard({
       turnover,
       gst,
       landed,
+      net,
       cancelled,
       received,
       created,
-      monthCount,
-      monthValueExGst,
       sd,
       hse,
       prs,
@@ -233,7 +225,7 @@ export default function Dashboard({
         </div>
 
         {/* KPI cards */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
           <Kpi
             icon={TrendingUp}
             label="Turnover (excl GST)"
@@ -242,11 +234,18 @@ export default function Dashboard({
             tint="from-brand-600 to-brand-500"
           />
           <Kpi
-            icon={Receipt}
-            label="This Month Invoices"
-            value={String(m.monthCount)}
-            sub={`₹ ${formatCompactINR(m.monthValueExGst)} excl GST`}
+            icon={Landmark}
+            label="Landed Amount (incl GST)"
+            value={`₹ ${formatCompactINR(m.landed)}`}
+            sub={`GST ₹ ${formatCompactINR(m.gst)}`}
             tint="from-indigo-600 to-blue-500"
+          />
+          <Kpi
+            icon={Wallet}
+            label="Net Received"
+            value={`₹ ${formatCompactINR(m.net)}`}
+            sub="after all deductions"
+            tint="from-emerald-600 to-teal-500"
           />
           <Kpi
             icon={XCircle}
