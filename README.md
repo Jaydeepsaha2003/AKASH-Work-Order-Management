@@ -1,0 +1,75 @@
+# AKASH Work Order Management System
+
+A modern desktop rebuild of the original `.xlsm` VBA Work Order tool — Electron + React +
+TypeScript + Tailwind, backed by a **local SQLite database** (`better-sqlite3`). Runs fully
+offline as a Windows `.exe`.
+
+## Install (for the end user)
+
+1. Run **`release/AKASH-Work-Order-Setup-1.0.0.exe`**.
+2. Choose an install folder, finish the wizard — a Desktop + Start-Menu shortcut is created.
+3. Launch **AKASH Work Order**. Log in with:
+   - `Prahlad` / `123456`
+   - `jaydeep` / `123456`
+   - Change either password from the 🔑 icon (top-right).
+
+Your data lives in a single local SQLite file at:
+`%APPDATA%\akash-work-order\akash-wom.sqlite`
+
+## The five screens
+
+| Screen | What it does |
+|--------|--------------|
+| **Dashboard** | Landing page: KPI cards (Turnover, GST, Landed, Net, Work Orders), turnover-by-financial-year bar chart, WO status donut, actionable **Reminder panels** (invoices awaiting receipt, SD/HSE/PRS recoverable, cancelled WOs — each jumps to the relevant screen), top outstanding work orders, and recent activity. |
+| **Create WO** | Enter work order + invoice. GST by % *or* amount → auto Total. Edit / Update / Delete. Footer shows Turnover, GST Total, Landed Amt. |
+| **Update Inv** | Double-click a *Created* WO, enter all deductions (Income Tax, HSE, PRS, SD, Cement, Labour Cess, Penalty, Land Rent, GST 2%, etc.) → auto **Net Amount**, marks WO *Received*, and auto-posts a deduction ledger entry. "Edit Mode" lets you revise *Received* invoices. |
+| **View Details** | Full 26-column register with search. Download full report or "deduction data only" to Excel (with subtotals). SD / HSE / PRS totals. |
+| **Manage Deduction** | Dr/Cr ledger for SD, HSE, PRS per work order. Add manual entries, edit, delete, export. Live Dr/Cr/Balance bars. |
+| **WO Outstanding** | SD / HSE / PRS balance per work order (debits − credits) + grand totals. Export. |
+
+All GST math, the duplicate-entry check, the Net Amount formula, the auto-ledger, and the
+delete guards replicate the original VBA exactly.
+
+### Import your old Excel data
+
+Click the **⬆ Import** icon (top-right) to load your existing `.xlsm` / `.xlsx`:
+
+- Reads the **Data** and **Deduction** sheets using the original column layout.
+- **Replace all** — clears the app's data first, then imports (best for a clean one-time load).
+- **Append** — adds rows on top; duplicate work orders (same Fin-Year + WO + Invoice) are skipped.
+
+Verified against the original file: 137 work orders + 189 deductions import correctly, and the
+resulting SD / HSE / PRS outstanding totals match the Excel sheet to the paisa.
+
+## Developer commands
+
+```bash
+npm install        # installs deps + rebuilds better-sqlite3 for Electron
+npm run dev        # hot-reload dev app
+npm run typecheck  # TS check (main + renderer)
+npm run build      # compile bundles
+npm run build:win  # produce the Windows installer in release/
+```
+
+- **Renderer** edits hot-reload. **Main-process** edits (`src/main/**`) need an app restart.
+- To ship a new version: bump `version` in `package.json`, then `npm run build:win`.
+
+## Architecture
+
+```
+src/
+├─ main/        Electron main — all DB access lives here
+│  ├─ db.ts        better-sqlite3 client + schema init + user seeding
+│  ├─ schema.ts    CREATE TABLE statements (workorders, deductions, users, work_order_list)
+│  ├─ workorders.ts / invoices.ts / deductions.ts / auth.ts   business logic
+│  ├─ exporter.ts  Excel export via ExcelJS + native save dialog
+│  ├─ ipc.ts       ipcMain handlers
+│  └─ index.ts     app bootstrap + window
+├─ preload/     contextBridge → window.api (the only surface the UI can call)
+└─ renderer/    React UI (Poppins headings, Calibri body, purple gradient theme)
+   └─ src/pages/  Login, CreateWO, UpdateInvoice, ViewDetails, ManageDeduction,
+                  WoOutstanding, ChangePassword
+```
+
+The renderer never touches the database directly — it calls `window.api.*` → IPC → a main
+module. The SQLite file stays entirely on the local machine.

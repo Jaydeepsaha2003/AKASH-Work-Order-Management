@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f4f2fb;
+  --card: #ffffff;
+  --text: #1e1b2e;
+  --muted: #6b6880;
+  --border: #e7e3f5;
+  --brand: #7c3aed;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Calibri', 'Poppins', 'Segoe UI', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-heading {
+  font-family: 'Poppins', 'Calibri', 'Segoe UI', sans-serif;
+}
+
+@layer components {
+  .app-gradient {
+    background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 45%, #8b5cf6 100%);
+  }
+  .card {
+    @apply rounded-2xl border border-[var(--border)] bg-white shadow-card;
+  }
+  .field-label {
+    @apply text-[13px] font-semibold text-slate-600;
+  }
+  .input {
+    @apply h-10 w-full rounded-lg border border-slate-200 bg-[#fbfaff] px-3 text-[14px]
+      text-slate-800 outline-none transition
+      placeholder:text-slate-400
+      focus:border-brand-400 focus:bg-white focus:ring-2 focus:ring-brand-200;
+  }
+  .input-readonly {
+    @apply bg-slate-100 text-slate-500;
+  }
+  .btn {
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-[14px]
+      font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-glow
+      hover:from-brand-700 hover:to-brand-600;
+  }
+  .btn-green {
+    @apply btn bg-gradient-to-r from-emerald-600 to-emerald-500 text-white
+      hover:from-emerald-700 hover:to-emerald-600;
+  }
+  .btn-red {
+    @apply btn bg-gradient-to-r from-rose-600 to-red-500 text-white
+      hover:from-rose-700 hover:to-red-600;
+  }
+  .btn-teal {
+    @apply btn bg-gradient-to-r from-teal-600 to-cyan-600 text-white
+      hover:from-teal-700 hover:to-cyan-700;
+  }
+  .btn-ghost {
+    @apply btn border border-slate-200 bg-white text-slate-700 hover:bg-slate-50;
+  }
+  .stat-chip {
+    @apply rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-white backdrop-blur;
+  }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c9c2e8;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b3a8e0;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,76 @@
+import type {
+  WorkOrder,
+  Deduction,
+  WoListItem,
+  OutstandingRow,
+  AuthUser,
+  WoCreateInput,
+  InvoiceInput,
+  DeductionInput
+} from '../main/types'
+
+export interface ExportRequest {
+  defaultName: string
+  headers: string[]
+  rows: (string | number)[][]
+  subtotalCols?: number[]
+  summary?: { label: string; value: string }[]
+}
+
+type Res = { ok: boolean; message: string }
+
+export interface Api {
+  auth: {
+    login: (username: string, password: string) => Promise<AuthUser | null>
+    changePassword: (
+      username: string,
+      oldPassword: string,
+      newPassword: string
+    ) => Promise<Res>
+  }
+  wo: {
+    list: () => Promise<WorkOrder[]>
+    names: () => Promise<WoListItem[]>
+    create: (values: WoCreateInput) => Promise<Res>
+    update: (
+      values: WoCreateInput & { id: number; wo_status: string; cancel_remarks: string | null }
+    ) => Promise<Res>
+    remove: (id: number) => Promise<Res>
+  }
+  inv: {
+    save: (values: InvoiceInput) => Promise<Res>
+    update: (values: InvoiceInput) => Promise<Res>
+  }
+  ded: {
+    list: () => Promise<Deduction[]>
+    save: (values: DeductionInput) => Promise<Res & { duplicate?: boolean }>
+    update: (values: DeductionInput) => Promise<Res>
+    remove: (id: number) => Promise<Res>
+    checkDup: (fin_year: string, work_order_no: string, invoice_no: string) => Promise<boolean>
+    outstanding: () => Promise<OutstandingRow[]>
+  }
+  excel: {
+    export: (req: ExportRequest) => Promise<Res & { path?: string }>
+    import: (
+      mode: 'append' | 'replace'
+    ) => Promise<Res & { woInserted?: number; woSkipped?: number; dedInserted?: number }>
+  }
+  update: {
+    onStatus: (cb: (data: UpdateStatus) => void) => () => void
+    check: () => Promise<{ ok: boolean; message?: string }>
+    install: () => Promise<{ ok: boolean }>
+  }
+}
+
+export interface UpdateStatus {
+  state: 'checking' | 'available' | 'none' | 'downloading' | 'ready' | 'error'
+  version?: string
+  percent?: number
+  message?: string
+}
+
+declare global {
+  interface Window {
+    api: Api
+  }
+}
