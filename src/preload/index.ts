@@ -31,6 +31,9 @@ const api = {
     export: (req: unknown) => ipcRenderer.invoke('excel:export', req),
     import: (mode: 'append' | 'replace') => ipcRenderer.invoke('excel:import', { mode })
   },
+  file: {
+    save: (req: { defaultName: string; base64: string }) => ipcRenderer.invoke('file:save', req)
+  },
   update: {
     onStatus: (cb: (data: unknown) => void) => {
       const listener = (_e: unknown, data: unknown): void => cb(data)

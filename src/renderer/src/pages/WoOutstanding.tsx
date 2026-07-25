@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Download } from 'lucide-react'
 import type { OutstandingRow } from '../lib/types'
 import { DataTable, type Column } from '../components/ui'
 import { formatAmt, todayISO } from '../lib/format'
-import { exportExcel } from '../lib/excel'
+import DownloadMenu from '../components/DownloadMenu'
+import type { DownloadPayload } from '../lib/download'
 
 export default function WoOutstanding(): React.JSX.Element {
   const [rows, setRows] = useState<OutstandingRow[]>([])
@@ -35,9 +35,10 @@ export default function WoOutstanding(): React.JSX.Element {
     return { sd, hse, prs }
   }, [filtered])
 
-  function download(): void {
-    exportExcel({
-      defaultName: `WO_Outstanding_${todayISO()}.xlsx`,
+  function buildDownload(): DownloadPayload {
+    return {
+      title: 'WO Outstanding',
+      defaultBase: `WO_Outstanding_${todayISO()}`,
       headers: ['Work Order', 'Name of WO', 'SD Balance', 'HSE Balance', 'PRS Balance'],
       rows: filtered.map((r) => [
         r.work_order_no,
@@ -52,7 +53,7 @@ export default function WoOutstanding(): React.JSX.Element {
         { label: 'HSE Total', value: formatAmt(totals.hse) },
         { label: 'PRS Total', value: formatAmt(totals.prs) }
       ]
-    })
+    }
   }
 
   const bal = (k: keyof OutstandingRow, header: string): Column<OutstandingRow> => ({
@@ -85,9 +86,7 @@ export default function WoOutstanding(): React.JSX.Element {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="btn-teal" onClick={download}>
-            <Download className="h-4 w-4" /> Download
-          </button>
+          <DownloadMenu build={buildDownload} />
           <div className="ml-auto text-sm text-slate-500">{filtered.length} work orders</div>
         </div>
         <div className="min-h-0 flex-1">

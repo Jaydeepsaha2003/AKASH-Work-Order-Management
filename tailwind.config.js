@@ -9,8 +9,9 @@ export default {
         '13': '3.25rem'
       },
       fontFamily: {
-        heading: ['Poppins', 'Calibri', 'Segoe UI', 'sans-serif'],
-        body: ['Calibri', 'Poppins', 'Segoe UI', 'sans-serif']
+        heading: ['Poppins', 'Segoe UI', 'sans-serif'],
+        body: ['Poppins', 'Segoe UI', 'sans-serif'],
+        sans: ['Poppins', 'Segoe UI', 'sans-serif']
       },
       colors: {
         brand: {

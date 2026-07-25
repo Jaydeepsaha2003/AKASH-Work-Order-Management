@@ -23,7 +23,7 @@ body,
 }
 
 body {
-  font-family: 'Calibri', 'Poppins', 'Segoe UI', sans-serif;
+  font-family: 'Poppins', 'Segoe UI', 'Calibri', sans-serif;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -35,7 +35,15 @@ h2,
 h3,
 h4,
 .font-heading {
-  font-family: 'Poppins', 'Calibri', 'Segoe UI', sans-serif;
+  font-family: 'Poppins', 'Segoe UI', sans-serif;
+}
+
+/* Poppins everywhere, including form controls */
+input,
+select,
+textarea,
+button {
+  font-family: 'Poppins', 'Segoe UI', sans-serif;
 }
 
 @layer components {
@@ -101,6 +109,10 @@ h4,
   background: transparent;
 }
 
+/* Numbers use Calibri (with tabular figures); everything else is Poppins.
+   Class selector beats the element-level Poppins rule above. */
 .tabular {
+  font-family: 'Calibri', 'Segoe UI', sans-serif;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
 }

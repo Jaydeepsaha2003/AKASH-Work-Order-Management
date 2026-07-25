@@ -55,6 +55,9 @@ export interface Api {
       mode: 'append' | 'replace'
     ) => Promise<Res & { woInserted?: number; woSkipped?: number; dedInserted?: number }>
   }
+  file: {
+    save: (req: { defaultName: string; base64: string }) => Promise<Res & { path?: string }>
+  }
   update: {
     onStatus: (cb: (data: UpdateStatus) => void) => () => void
     check: () => Promise<{ ok: boolean; message?: string }>

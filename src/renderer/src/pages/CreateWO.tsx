@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Save, Eraser, Pencil, RefreshCw, Trash2, Download, CalendarDays } from 'lucide-react'
+import { Save, Eraser, Pencil, RefreshCw, Trash2, CalendarDays } from 'lucide-react'
 import type { WorkOrder } from '../lib/types'
 import { Field, TextInput, NumberInput, DateInput, DataTable, Select, type Column } from '../components/ui'
+import DownloadMenu from '../components/DownloadMenu'
+import type { DownloadPayload } from '../lib/download'
 import {
   formatAmt,
   formatDate,
@@ -12,7 +14,6 @@ import {
   errText,
   fail
 } from '../lib/format'
-import { exportExcel } from '../lib/excel'
 
 const blank = {
   work_order_no: '',
@@ -205,9 +206,10 @@ export default function CreateWO(): React.JSX.Element {
     }
   }
 
-  function download(): void {
-    exportExcel({
-      defaultName: `WorkOrders_${todayISO()}.xlsx`,
+  function buildDownload(): DownloadPayload {
+    return {
+      title: 'Work Orders',
+      defaultBase: `WorkOrders_${todayISO()}`,
       headers: [
         'Fin-Year',
         'Entry Date',
@@ -241,7 +243,7 @@ export default function CreateWO(): React.JSX.Element {
         r.wo_name || ''
       ]),
       subtotalCols: [8, 9, 10]
-    })
+    }
   }
 
   const columns: Column<WorkOrder>[] = [
@@ -374,9 +376,7 @@ export default function CreateWO(): React.JSX.Element {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className="btn-teal" onClick={download}>
-          <Download className="h-4 w-4" /> Download
-        </button>
+        <DownloadMenu build={buildDownload} />
         <div className="flex-1" />
         <button className="btn-ghost" onClick={startEdit}>
           <Pencil className="h-4 w-4" /> Edit

@@ -18,6 +18,9 @@ Your data lives in a single local SQLite file at:
 
 ## The five screens
 
+The UI uses **Poppins** throughout, with **Calibri** reserved for numbers (aligned, tabular
+figures), a **side navigation bar**, and every report is downloadable as **Excel or PDF**.
+
 | Screen | What it does |
 |--------|--------------|
 | **Dashboard** | Landing page: KPI cards (Turnover, GST, Landed, Net, Work Orders), turnover-by-financial-year bar chart, WO status donut, actionable **Reminder panels** (invoices awaiting receipt, SD/HSE/PRS recoverable, cancelled WOs — each jumps to the relevant screen), top outstanding work orders, and recent activity. |

@@ -16,7 +16,7 @@ import {
   outstanding
 } from './deductions'
 import { verifyLogin, changePassword } from './auth'
-import { exportToExcel, type ExportRequest } from './exporter'
+import { exportToExcel, saveBinaryFile, type ExportRequest } from './exporter'
 import { importExcel } from './importexcel'
 import { backupDatabase, restoreDatabase } from './backup'
 
@@ -54,6 +54,7 @@ export function registerIpc(): void {
   // Excel export
   handle('excel:export', (a: ExportRequest, win) => exportToExcel(win, a))
   handle('excel:import', (a: { mode: 'append' | 'replace' }, win) => importExcel(win, a))
+  handle('file:save', (a: { defaultName: string; base64: string }, win) => saveBinaryFile(win, a))
 
   // App info + database backup/restore
   handle('app:version', () => app.getVersion())

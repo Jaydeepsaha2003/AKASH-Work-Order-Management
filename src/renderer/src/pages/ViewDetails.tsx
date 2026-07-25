@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Download, Filter } from 'lucide-react'
+import { Filter } from 'lucide-react'
 import type { WorkOrder } from '../lib/types'
 import { DataTable, type Column } from '../components/ui'
 import { formatAmt, formatDate, todayISO } from '../lib/format'
-import { exportExcel } from '../lib/excel'
+import DownloadMenu from '../components/DownloadMenu'
+import type { DownloadPayload } from '../lib/download'
 import { StatusBadge } from './CreateWO'
 
 const HEADERS = [
@@ -99,23 +100,25 @@ export default function ViewDetails(): React.JSX.Element {
     return { sd, hse, prs }
   }, [filtered])
 
-  function downloadFull(): void {
-    exportExcel({
-      defaultName: `WO_Details_${todayISO()}.xlsx`,
+  function buildFull(): DownloadPayload {
+    return {
+      title: 'Work Order Details',
+      defaultBase: `WO_Details_${todayISO()}`,
       headers: HEADERS,
       rows: filtered.map(toRow),
       subtotalCols: SUBTOTAL_COLS
-    })
+    }
   }
 
-  function downloadDeductions(): void {
+  function buildDeductions(): DownloadPayload {
     const only = filtered.filter((r) => r.hse !== 0 || r.price_deduction !== 0 || r.sd_amt !== 0)
-    exportExcel({
-      defaultName: `Deduction_Report_${todayISO()}.xlsx`,
+    return {
+      title: 'Deduction Report',
+      defaultBase: `Deduction_Report_${todayISO()}`,
       headers: HEADERS,
       rows: only.map(toRow),
       subtotalCols: SUBTOTAL_COLS
-    })
+    }
   }
 
   const money = (k: keyof WorkOrder): Column<WorkOrder> => ({
@@ -163,12 +166,8 @@ export default function ViewDetails(): React.JSX.Element {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <button className="btn-teal" onClick={downloadFull}>
-          <Download className="h-4 w-4" /> Download Full
-        </button>
-        <button className="btn-ghost" onClick={downloadDeductions}>
-          <Download className="h-4 w-4" /> Deduction Data Only
-        </button>
+        <DownloadMenu build={buildFull} label="Download Full" />
+        <DownloadMenu build={buildDeductions} label="Deduction Only" variant="ghost" />
         <div className="ml-auto text-sm text-slate-500">
           {filtered.length} record{filtered.length === 1 ? '' : 's'}
         </div>

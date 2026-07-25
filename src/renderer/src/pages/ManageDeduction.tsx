@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Save, Eraser, RefreshCw, Trash2, Download } from 'lucide-react'
+import { Save, Eraser, RefreshCw, Trash2 } from 'lucide-react'
 import type { Deduction, WoListItem } from '../lib/types'
 import { Field, TextInput, NumberInput, DateInput, ComboBox, Select, DataTable, type Column } from '../components/ui'
 import { formatAmt, formatDate, financialYear, toNum, todayISO, errText, fail } from '../lib/format'
-import { exportExcel } from '../lib/excel'
+import DownloadMenu from '../components/DownloadMenu'
+import type { DownloadPayload } from '../lib/download'
 
 const blank = {
   work_order_no: '',
@@ -175,9 +176,10 @@ export default function ManageDeduction(): React.JSX.Element {
     }
   }
 
-  function download(): void {
-    exportExcel({
-      defaultName: `Deduction_Ledger_${todayISO()}.xlsx`,
+  function buildDownload(): DownloadPayload {
+    return {
+      title: 'Deduction Ledger',
+      defaultBase: `Deduction_Ledger_${todayISO()}`,
       headers: [
         'Fin-Year',
         'Work Order No',
@@ -216,7 +218,7 @@ export default function ManageDeduction(): React.JSX.Element {
         { label: 'HSE Total', value: `Dr ${formatAmt(totals.hseDr)}  Cr ${formatAmt(totals.hseCr)}  Bal ${formatAmt(totals.hseDr - totals.hseCr)}` },
         { label: 'PRS Total', value: `Dr ${formatAmt(totals.prsDr)}  Cr ${formatAmt(totals.prsCr)}  Bal ${formatAmt(totals.prsDr - totals.prsCr)}` }
       ]
-    })
+    }
   }
 
   const m = (k: keyof Deduction, header: string): Column<Deduction> => ({
@@ -257,9 +259,7 @@ export default function ManageDeduction(): React.JSX.Element {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className="btn-teal" onClick={download}>
-          <Download className="h-4 w-4" /> Download
-        </button>
+        <DownloadMenu build={buildDownload} />
         <div className="flex-1" />
         <button className="btn-red" onClick={remove}>
           <Trash2 className="h-4 w-4" /> Delete Deduc Entry

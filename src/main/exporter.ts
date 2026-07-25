@@ -1,5 +1,28 @@
 import { dialog, BrowserWindow } from 'electron'
+import { writeFile } from 'fs/promises'
 import ExcelJS from 'exceljs'
+
+// Save a base64-encoded binary payload (e.g. a generated PDF) to a user-chosen path.
+export async function saveBinaryFile(
+  win: BrowserWindow | null,
+  req: { defaultName: string; base64: string }
+): Promise<{ ok: boolean; message: string; path?: string }> {
+  const ext = (req.defaultName.split('.').pop() || 'bin').toLowerCase()
+  const result = await dialog.showSaveDialog(win!, {
+    title: 'Save file',
+    defaultPath: req.defaultName,
+    filters: [{ name: `${ext.toUpperCase()} File`, extensions: [ext] }]
+  })
+  if (result.canceled || !result.filePath) {
+    return { ok: false, message: 'Export cancelled.' }
+  }
+  try {
+    await writeFile(result.filePath, Buffer.from(req.base64, 'base64'))
+    return { ok: true, message: 'File saved successfully.', path: result.filePath }
+  } catch (e) {
+    return { ok: false, message: `Save failed: ${String((e as Error)?.message || e)}` }
+  }
+}
 
 export interface ExportRequest {
   defaultName: string
