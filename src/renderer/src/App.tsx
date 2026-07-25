@@ -27,10 +27,9 @@ export default function App(): React.JSX.Element {
 
   // Restore the persisted session from the main process on startup
   useEffect(() => {
-    window.api.session
-      .get()
-      .then((u) => setUserState(u))
-      .finally(() => setReady(true))
+    const p = window.api?.session?.get?.()
+    if (p) p.then((u) => setUserState(u)).finally(() => setReady(true))
+    else setReady(true)
   }, [])
 
   const setUser = (u: AuthUser): void => {
@@ -116,7 +115,9 @@ export default function App(): React.JSX.Element {
         {/* Page body */}
         <main className="flex-1 overflow-hidden p-4">
           <div key={`${page}-${refreshKey}`} className="h-full animate-fade-in">
-            {page === 'dashboard' && <Dashboard username={user.username} onNavigate={setPage} />}
+            {page === 'dashboard' && (
+              <Dashboard username={user.username} company={activeCompany} onNavigate={setPage} />
+            )}
             {page === 'create' && <CreateWO />}
             {page === 'invoice' && <UpdateInvoice />}
             {page === 'view' && <ViewDetails />}

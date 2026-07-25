@@ -10,11 +10,12 @@ import {
   RefreshCw,
   CalendarDays,
   XCircle,
-  CalendarRange
+  CalendarRange,
+  Building2
 } from 'lucide-react'
-import type { WorkOrder, OutstandingRow, Page } from '../lib/types'
+import type { WorkOrder, Deduction, Page, Company } from '../lib/types'
 import { formatAmt, formatCompactINR, formatDate, todayISO } from '../lib/format'
-import { DateInput, Segmented } from '../components/ui'
+import { DateInput, Segmented, Select } from '../components/ui'
 
 type Preset = 'month' | 'fy' | 'all' | 'custom'
 
@@ -43,21 +44,33 @@ function monthRange(): { from: string; to: string } {
   return { from: `${y}-${pad(m)}-01`, to: `${y}-${pad(m)}-${String(last).padStart(2, '0')}` }
 }
 
+// "2022-23" → { from: 2022-04-01, to: 2023-03-31 }
+function fyToRange(fy: string): { from: string; to: string } | null {
+  const m = fy.match(/^(\d{4})-\d{2}$/)
+  if (!m) return null
+  const sy = parseInt(m[1], 10)
+  return { from: `${sy}-04-01`, to: `${sy + 1}-03-31` }
+}
+
 export default function Dashboard({
   username,
+  company,
   onNavigate
 }: {
   username: string
+  company: Company | null
   onNavigate: (p: Page) => void
 }): React.JSX.Element {
   const [rows, setRows] = useState<WorkOrder[]>([])
-  const [out, setOut] = useState<OutstandingRow[]>([])
+  const [deds, setDeds] = useState<Deduction[]>([])
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [preset, setPreset] = useState<Preset>('all')
+  const [fyValue, setFyValue] = useState('')
 
   function applyPreset(p: Preset): void {
     setPreset(p)
+    setFyValue('')
     if (p === 'month') {
       const r = monthRange()
       setFrom(r.from)
@@ -72,10 +85,31 @@ export default function Dashboard({
     }
   }
 
+  function pickFY(fy: string): void {
+    setFyValue(fy)
+    const r = fyToRange(fy)
+    if (r) {
+      setFrom(r.from)
+      setTo(r.to)
+      setPreset('custom')
+    }
+  }
+
+  function setCustomFrom(v: string): void {
+    setFrom(v)
+    setPreset('custom')
+    setFyValue('')
+  }
+  function setCustomTo(v: string): void {
+    setTo(v)
+    setPreset('custom')
+    setFyValue('')
+  }
+
   async function reload(): Promise<void> {
-    const [wo, o] = await Promise.all([window.api.wo.list(), window.api.ded.outstanding()])
+    const [wo, d] = await Promise.all([window.api.wo.list(), window.api.ded.list()])
     setRows(wo)
-    setOut(o)
+    setDeds(d)
   }
   useEffect(() => {
     reload()
@@ -104,14 +138,40 @@ export default function Dashboard({
     const gst = inRange.reduce((s, r) => s + r.gst_on_gross, 0)
     const landed = inRange.reduce((s, r) => s + r.total_amt, 0) // incl GST
     const net = inRange.reduce((s, r) => s + r.net_amount, 0) // received after deductions
+    // total of every deduction column (what was withheld from the invoices)
+    const deductions = inRange.reduce(
+      (s, r) =>
+        s +
+        r.income_tax +
+        r.gst_2 +
+        r.cem_bags +
+        r.labour_cess +
+        r.penalty +
+        r.land_rent +
+        r.gst_rent_penalty +
+        r.round_off +
+        r.hse +
+        r.price_deduction +
+        r.sd_amt,
+      0
+    )
     const cancelled = inRange.filter((r) => (r.wo_status || '').toLowerCase() === 'cancelled')
     const received = inRange.filter((r) => (r.wo_status || '').toLowerCase() === 'received')
     const created = inRange.filter((r) => (r.wo_status || '').toLowerCase() === 'created')
 
-    // SD / HSE / PRS pending till date (all-time outstanding)
-    const sd = out.reduce((s, o) => s + o.sd_balance, 0)
-    const hse = out.reduce((s, o) => s + o.hse_balance, 0)
-    const prs = out.reduce((s, o) => s + o.prs_balance, 0)
+    // SD / HSE / PRS pending — scoped to the date range by each deduction's date
+    const dedInRange =
+      !from && !to
+        ? deds
+        : deds.filter((d) => {
+            const dt = d.deduct_date || ''
+            if (from && dt < from) return false
+            if (to && dt > to) return false
+            return true
+          })
+    const sd = dedInRange.reduce((s, d) => s + (d.sd_debit - d.sd_credit), 0)
+    const hse = dedInRange.reduce((s, d) => s + (d.hse_debit - d.hse_credit), 0)
+    const prs = dedInRange.reduce((s, d) => s + (d.prs_debit - d.prs_credit), 0)
 
     // Turnover by financial year (within the selected date range)
     const byFy = new Map<string, number>()
@@ -134,6 +194,7 @@ export default function Dashboard({
       gst,
       landed,
       net,
+      deductions,
       cancelled,
       received,
       created,
@@ -144,7 +205,14 @@ export default function Dashboard({
       pending,
       pendingValue
     }
-  }, [inRange, rows, out])
+  }, [inRange, deds, from, to])
+
+  // all distinct financial years available in the data (newest first) for the quick filter
+  const availableFYs = useMemo(() => {
+    const set = new Set<string>()
+    for (const r of rows) if (r.fin_year) set.add(r.fin_year)
+    return [...set].sort((a, b) => b.localeCompare(a))
+  }, [rows])
 
   const weekday = new Date().toLocaleDateString('en-IN', { weekday: 'long' })
   const today = `${weekday}, ${formatDate(todayISO())}`
@@ -165,14 +233,27 @@ export default function Dashboard({
               <h1 className="mt-1 font-heading text-3xl font-bold">
                 {greeting}, {username}! 👋
               </h1>
-              <p className="mt-1 text-[16px] text-white/80">Showing data for: {rangeLabel}</p>
+              {company?.name && (
+                <div className="mt-1.5 flex items-center gap-2 text-white/90">
+                  <Building2 className="h-4 w-4" />
+                  <span className="font-heading text-[17px] font-semibold">{company.name}</span>
+                </div>
+              )}
+              <p className="mt-1 text-[15px] text-white/70">Showing data for: {rangeLabel}</p>
             </div>
-            <button
-              onClick={reload}
-              className="flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-[15px] font-semibold backdrop-blur transition hover:bg-white/25"
-            >
-              <RefreshCw className="h-4 w-4" /> Refresh
-            </button>
+            <div className="flex items-center gap-3">
+              {company?.logo && (
+                <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white/90 shadow-sm">
+                  <img src={company.logo} alt="" className="h-full w-full object-contain p-1" />
+                </span>
+              )}
+              <button
+                onClick={reload}
+                className="flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-[15px] font-semibold backdrop-blur transition hover:bg-white/25"
+              >
+                <RefreshCw className="h-4 w-4" /> Refresh
+              </button>
+            </div>
           </div>
         </div>
 
@@ -189,23 +270,24 @@ export default function Dashboard({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="w-44">
-              <DateInput
-                iso={from}
-                onISO={(v) => {
-                  setFrom(v)
-                  setPreset('custom')
-                }}
-              />
+            <div className="w-40">
+              <DateInput iso={from} onISO={setCustomFrom} />
             </div>
             <span className="text-slate-300">→</span>
-            <div className="w-44">
-              <DateInput
-                iso={to}
-                onISO={(v) => {
-                  setTo(v)
-                  setPreset('custom')
-                }}
+            <div className="w-40">
+              <DateInput iso={to} onISO={setCustomTo} />
+            </div>
+          </div>
+
+          {/* Quick FY filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] font-semibold text-slate-500">Quick FY</span>
+            <div className="w-32">
+              <Select
+                value={fyValue}
+                onChange={pickFY}
+                options={availableFYs.map((f) => ({ value: f, label: `FY ${f}` }))}
+                placeholder="Select FY"
               />
             </div>
           </div>
@@ -244,7 +326,7 @@ export default function Dashboard({
             icon={Wallet}
             label="Net Received"
             value={`₹ ${formatCompactINR(m.net)}`}
-            sub="after all deductions"
+            sub={`Deductions ₹ ${formatCompactINR(m.deductions)}`}
             tint="from-emerald-600 to-teal-500"
           />
           <Kpi
@@ -256,7 +338,7 @@ export default function Dashboard({
           />
           <Kpi
             icon={FileText}
-            label="Work Orders"
+            label="Total Invoices made"
             value={String(inRange.length)}
             sub={`${m.received.length} received · ${m.created.length} pending`}
             tint="from-fuchsia-600 to-pink-500"
@@ -265,9 +347,9 @@ export default function Dashboard({
 
         {/* SD / HSE / PRS pending till date */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <PendingCard label="SD Pending (till date)" value={m.sd} color="from-rose-500 to-red-500" icon={ShieldAlert} />
-          <PendingCard label="HSE Pending (till date)" value={m.hse} color="from-brand-600 to-brand-500" icon={ShieldAlert} />
-          <PendingCard label="PRS Pending (till date)" value={m.prs} color="from-teal-600 to-cyan-600" icon={CircleDollarSign} />
+          <PendingCard label="SD Pending" value={m.sd} color="from-rose-500 to-red-500" icon={ShieldAlert} />
+          <PendingCard label="HSE Pending" value={m.hse} color="from-brand-600 to-brand-500" icon={ShieldAlert} />
+          <PendingCard label="PRS Pending" value={m.prs} color="from-teal-600 to-cyan-600" icon={CircleDollarSign} />
         </div>
 
         {/* Charts */}
