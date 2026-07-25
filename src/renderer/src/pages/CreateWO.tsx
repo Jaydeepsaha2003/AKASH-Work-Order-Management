@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Save, Eraser, Pencil, RefreshCw, Trash2, CalendarDays } from 'lucide-react'
 import type { WorkOrder } from '../lib/types'
-import { Field, TextInput, NumberInput, DateInput, DataTable, Select, type Column } from '../components/ui'
+import { Field, TextInput, NumberInput, DateInput, DataTable, Select, EditableCombo, type Column } from '../components/ui'
 import DownloadMenu from '../components/DownloadMenu'
 import type { DownloadPayload } from '../lib/download'
 import {
@@ -272,30 +272,24 @@ export default function CreateWO(): React.JSX.Element {
       {/* Form card */}
       <div className="card p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-heading text-[15px] font-semibold text-brand-700">
+          <h2 className="font-heading text-[16px] font-semibold text-brand-700">
             {editing ? 'Edit Work Order' : 'Enter Work Order & Invoice Details'}
           </h2>
           <div className="flex items-center gap-2 rounded-lg bg-brand-50 px-3 py-1.5 text-brand-700">
             <CalendarDays className="h-4 w-4" />
-            <span className="font-heading text-sm font-semibold">FY {finYear}</span>
+            <span className="font-heading text-[16px] font-semibold">FY {finYear}</span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-x-5 gap-y-3 md:grid-cols-3">
           <Field label="Work Order No">
-            <TextInput
-              list="wo-list"
+            <EditableCombo
               value={form.work_order_no}
-              readOnlyLook={!!editing}
+              onChange={(v) => set('work_order_no', v)}
+              options={names}
               disabled={!!editing}
-              onChange={(e) => set('work_order_no', e.target.value)}
               placeholder="Select or type…"
             />
-            <datalist id="wo-list">
-              {names.map((n) => (
-                <option key={n} value={n} />
-              ))}
-            </datalist>
           </Field>
           <Field label="Invoice No">
             <TextInput value={form.invoice_no} onChange={(e) => set('invoice_no', e.target.value)} />
@@ -414,7 +408,7 @@ export default function CreateWO(): React.JSX.Element {
 function FooterStat({ label, value }: { label: string; value: number }): React.JSX.Element {
   return (
     <div className="text-center">
-      <div className="text-[12px] uppercase tracking-wide text-white/70">{label}</div>
+      <div className="text-[13px] uppercase tracking-wide text-white/70">{label}</div>
       <div className="tabular font-heading text-lg font-bold">₹ {formatAmt(value)}</div>
     </div>
   )
@@ -429,7 +423,7 @@ export function StatusBadge({ status }: { status: string }): React.JSX.Element {
         ? 'bg-rose-100 text-rose-700'
         : 'bg-amber-100 text-amber-700'
   return (
-    <span className={`rounded-full px-2 py-0.5 text-[11.5px] font-semibold ${cls}`}>
+    <span className={`rounded-full px-2 py-0.5 text-[12.5px] font-semibold ${cls}`}>
       {status || 'Created'}
     </span>
   )

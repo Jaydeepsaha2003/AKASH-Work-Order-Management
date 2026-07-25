@@ -30,7 +30,8 @@ moved into a default "My Company" and nothing is lost.
 
 | Screen | What it does |
 |--------|--------------|
-| **Dashboard** | Landing page: KPI cards (Turnover, GST, Landed, Net, Work Orders), turnover-by-financial-year bar chart, WO status donut, actionable **Reminder panels** (invoices awaiting receipt, SD/HSE/PRS recoverable, cancelled WOs — each jumps to the relevant screen), top outstanding work orders, and recent activity. |
+| **Dashboard** | **Date-range filter** (This Month / This FY / All / custom) + KPIs: Turnover excl GST, this-month invoice count & value, cancelled invoices, work orders. **SD / HSE / PRS pending till date**, turnover-by-FY bar chart, WO status donut, and a **Pending Invoices** table showing days pending. |
+| **Activity Log** | Full audit trail — every create / update / delete / import / restore is recorded with the user, company, timestamp, and details. Searchable; clearable. |
 | **Create WO** | Enter work order + invoice. GST by % *or* amount → auto Total. Edit / Update / Delete. Footer shows Turnover, GST Total, Landed Amt. |
 | **Update Inv** | Double-click a *Created* WO, enter all deductions (Income Tax, HSE, PRS, SD, Cement, Labour Cess, Penalty, Land Rent, GST 2%, etc.) → auto **Net Amount**, marks WO *Received*, and auto-posts a deduction ledger entry. "Edit Mode" lets you revise *Received* invoices. |
 | **View Details** | Full 26-column register with search. Download full report or "deduction data only" to Excel (with subtotals). SD / HSE / PRS totals. |

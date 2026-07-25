@@ -45,7 +45,7 @@ export default function ImportData({ onDone }: { onDone: () => void }): React.JS
       <div className="w-full max-w-2xl">
         <button
           onClick={onDone}
-          className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-brand-600"
+          className="mb-4 flex items-center gap-1.5 text-[16px] font-semibold text-slate-500 hover:text-brand-600"
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
@@ -57,13 +57,13 @@ export default function ImportData({ onDone }: { onDone: () => void }): React.JS
             </div>
             <div>
               <h2 className="font-heading text-lg font-bold text-slate-800">Import Excel Data</h2>
-              <p className="text-sm text-slate-500">
+              <p className="text-[16px] text-slate-500">
                 Load work orders &amp; deductions from your existing <b>.xlsm</b> / <b>.xlsx</b> file
               </p>
             </div>
           </div>
 
-          <p className="mb-5 text-[13.5px] leading-relaxed text-slate-600">
+          <p className="mb-5 text-[14.5px] leading-relaxed text-slate-600">
             The importer reads the <b>Data</b> sheet (work orders &amp; invoices) and the{' '}
             <b>Deduction</b> sheet (ledger entries) from the workbook, matching the original column
             layout. Everything else in the file is ignored.
@@ -87,7 +87,7 @@ export default function ImportData({ onDone }: { onDone: () => void }): React.JS
           </div>
 
           {mode === 'replace' && (
-            <div className="mt-4 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-[13px] text-amber-800">
+            <div className="mt-4 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-[14px] text-amber-800">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
                 <b>Replace all</b> permanently deletes every existing work order and deduction in the
@@ -143,14 +143,14 @@ function ModeCard({
       }`}
     >
       <div className="flex items-center gap-2">
-        <span className="font-heading text-[15px] font-bold text-slate-800">{title}</span>
+        <span className="font-heading text-[16px] font-bold text-slate-800">{title}</span>
         {recommended && (
-          <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[10.5px] font-semibold text-white">
+          <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[11.5px] font-semibold text-white">
             Recommended
           </span>
         )}
       </div>
-      <p className="mt-1 text-[13px] leading-snug text-slate-500">{desc}</p>
+      <p className="mt-1 text-[14px] leading-snug text-slate-500">{desc}</p>
     </button>
   )
 }
@@ -159,7 +159,7 @@ function Stat({ label, value }: { label: string; value: number }): React.JSX.Ele
   return (
     <div className="rounded-lg bg-white px-3 py-2.5">
       <div className="tabular font-heading text-2xl font-bold text-brand-700">{value}</div>
-      <div className="text-[12px] uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="text-[13px] uppercase tracking-wide text-slate-500">{label}</div>
     </div>
   )
 }

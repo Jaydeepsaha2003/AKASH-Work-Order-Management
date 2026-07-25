@@ -8,7 +8,8 @@ import {
   Settings,
   KeyRound,
   Upload,
-  Building2
+  Building2,
+  History
 } from 'lucide-react'
 import type { Page } from '../lib/types'
 
@@ -26,7 +27,8 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'invoice', label: 'Update Invoice', subtitle: 'Record receipts & deductions', icon: ReceiptText },
   { key: 'view', label: 'View Details', subtitle: 'Full register & reports', icon: Table2 },
   { key: 'deduction', label: 'Manage Deduction', subtitle: 'SD / HSE / PRS ledger', icon: Scale },
-  { key: 'outstanding', label: 'WO Outstanding', subtitle: 'Recoverable balances', icon: Wallet }
+  { key: 'outstanding', label: 'WO Outstanding', subtitle: 'Recoverable balances', icon: Wallet },
+  { key: 'activity', label: 'Activity Log', subtitle: 'Everything that changed', icon: History }
 ]
 
 // Meta for every page (for the top bar title)
@@ -37,6 +39,7 @@ export const PAGE_META: Record<Page, { label: string; subtitle: string; icon: Na
   view: NAV_ITEMS[3],
   deduction: NAV_ITEMS[4],
   outstanding: NAV_ITEMS[5],
+  activity: NAV_ITEMS[6],
   settings: { label: 'Settings', subtitle: 'Updates, backup & account', icon: Settings },
   password: { label: 'Change Password', subtitle: 'Account security', icon: KeyRound },
   import: { label: 'Import Excel', subtitle: 'Load .xlsm / .xlsx data', icon: Upload },

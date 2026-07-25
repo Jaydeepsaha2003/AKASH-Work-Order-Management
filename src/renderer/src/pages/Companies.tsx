@@ -161,7 +161,7 @@ export default function Companies({
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-500 text-white">
               <Building2 className="h-4.5 w-4.5" />
             </div>
-            <h2 className="font-heading text-[16px] font-semibold text-slate-800">
+            <h2 className="font-heading text-[17px] font-semibold text-slate-800">
               {editId ? `Edit "${editingName}"` : 'Add a company'}
             </h2>
           </div>
@@ -184,12 +184,12 @@ export default function Companies({
                 onChange={pickLogo}
               />
               <div className="flex gap-1.5">
-                <button className="btn-ghost h-8 px-2.5 text-[12px]" onClick={() => fileRef.current?.click()}>
+                <button className="btn-ghost h-8 px-2.5 text-[13px]" onClick={() => fileRef.current?.click()}>
                   <ImagePlus className="h-3.5 w-3.5" /> Logo
                 </button>
                 {form.logo && (
                   <button
-                    className="btn-ghost h-8 px-2.5 text-[12px]"
+                    className="btn-ghost h-8 px-2.5 text-[13px]"
                     onClick={() => setForm((f) => ({ ...f, logo: null }))}
                   >
                     <X className="h-3.5 w-3.5" /> Remove
@@ -259,15 +259,15 @@ export default function Companies({
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate font-heading text-[15px] font-semibold text-slate-800">
+                    <div className="truncate font-heading text-[16px] font-semibold text-slate-800">
                       {c.name}
                     </div>
-                    <div className="truncate text-[12px] text-slate-500">
+                    <div className="truncate text-[13px] text-slate-500">
                       {c.gstin || c.address || 'No details'}
                     </div>
                   </div>
                   {active && (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-semibold text-emerald-700">
                       Active
                     </span>
                   )}
@@ -276,21 +276,21 @@ export default function Companies({
                 <div className="flex gap-1.5">
                   {!active && (
                     <button
-                      className="btn-primary h-8 flex-1 px-2 text-[12.5px]"
+                      className="btn-primary h-8 flex-1 px-2 text-[13.5px]"
                       onClick={() => setActive(c.id)}
                     >
                       <Check className="h-3.5 w-3.5" /> Set active
                     </button>
                   )}
                   <button
-                    className="btn-ghost h-8 px-2.5 text-[12.5px]"
+                    className="btn-ghost h-8 px-2.5 text-[13.5px]"
                     onClick={() => edit(c)}
                     title="Edit"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    className="btn-ghost h-8 px-2.5 text-[12.5px] text-rose-600"
+                    className="btn-ghost h-8 px-2.5 text-[13.5px] text-rose-600"
                     onClick={() => remove(c)}
                     title="Delete"
                     disabled={companies.length <= 1}
@@ -308,7 +308,7 @@ export default function Companies({
             className="flex min-h-[104px] flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 transition hover:border-brand-300 hover:text-brand-500"
           >
             <Plus className="h-6 w-6" />
-            <span className="text-[13px] font-semibold">New company (use the form above)</span>
+            <span className="text-[14px] font-semibold">New company (use the form above)</span>
           </button>
         </div>
       </div>

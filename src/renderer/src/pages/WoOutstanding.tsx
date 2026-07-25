@@ -87,7 +87,7 @@ export default function WoOutstanding(): React.JSX.Element {
             onChange={(e) => setSearch(e.target.value)}
           />
           <DownloadMenu build={buildDownload} />
-          <div className="ml-auto text-sm text-slate-500">{filtered.length} work orders</div>
+          <div className="ml-auto text-[16px] text-slate-500">{filtered.length} work orders</div>
         </div>
         <div className="min-h-0 flex-1">
           <DataTable columns={columns} rows={filtered} minWidth={760} />
@@ -100,7 +100,7 @@ export default function WoOutstanding(): React.JSX.Element {
         <BigStat label="SD Total" value={totals.sd} color="from-rose-500 to-red-500" />
         <BigStat label="HSE Total" value={totals.hse} color="from-brand-600 to-brand-500" />
         <BigStat label="PRS Total" value={totals.prs} color="from-teal-600 to-cyan-600" />
-        <p className="mt-2 text-[13px] leading-relaxed text-slate-500">
+        <p className="mt-2 text-[14px] leading-relaxed text-slate-500">
           Balances are computed per work order as total debits minus total credits across the
           deduction ledger.
         </p>
@@ -120,7 +120,7 @@ function BigStat({
 }): React.JSX.Element {
   return (
     <div className={`rounded-2xl bg-gradient-to-br ${color} p-5 text-white shadow-glow`}>
-      <div className="text-[13px] uppercase tracking-wide text-white/80">{label}</div>
+      <div className="text-[14px] uppercase tracking-wide text-white/80">{label}</div>
       <div className="tabular mt-1 font-heading text-2xl font-bold">₹ {formatAmt(value)}</div>
     </div>
   )

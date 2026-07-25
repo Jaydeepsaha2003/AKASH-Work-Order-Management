@@ -8,7 +8,8 @@ import type {
   InvoiceInput,
   DeductionInput,
   Company,
-  CompanyInput
+  CompanyInput,
+  ActivityRow
 } from '../main/types'
 
 export interface ExportRequest {
@@ -72,6 +73,13 @@ export interface Api {
     update: (values: CompanyInput & { id: number }) => Promise<Res>
     remove: (id: number) => Promise<Res>
     setActive: (id: number) => Promise<Res>
+  }
+  session: {
+    setUser: (username: string) => Promise<Res>
+  }
+  activity: {
+    list: () => Promise<ActivityRow[]>
+    clear: () => Promise<Res>
   }
   app: {
     version: () => Promise<string>

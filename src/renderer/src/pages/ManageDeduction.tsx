@@ -288,10 +288,10 @@ export default function ManageDeduction(): React.JSX.Element {
       {/* form */}
       <div className="card min-h-0 flex-1 overflow-auto p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-heading text-[15px] font-semibold text-brand-700">
+          <h2 className="font-heading text-[16px] font-semibold text-brand-700">
             {editId ? 'Edit Deduction Entry' : 'Enter Deduction Details'}
           </h2>
-          <div className="rounded-lg bg-brand-50 px-3 py-1.5 font-heading text-sm font-semibold text-brand-700">
+          <div className="rounded-lg bg-brand-50 px-3 py-1.5 font-heading text-[16px] font-semibold text-brand-700">
             FY {finYear}
           </div>
         </div>
@@ -375,8 +375,8 @@ export default function ManageDeduction(): React.JSX.Element {
 function BalBar({ label, dr, cr }: { label: string; dr: number; cr: number }): React.JSX.Element {
   return (
     <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-card">
-      <span className="font-heading text-sm font-bold text-brand-700">{label} Total</span>
-      <div className="flex gap-4 text-[13px] tabular">
+      <span className="font-heading text-[16px] font-bold text-brand-700">{label} Total</span>
+      <div className="flex gap-4 text-[14px] tabular">
         <span className="text-slate-500">Dr <b className="text-slate-700">{formatAmt(dr)}</b></span>
         <span className="text-slate-500">Cr <b className="text-slate-700">{formatAmt(cr)}</b></span>
         <span className="text-slate-500">Bal <b className="text-emerald-700">{formatAmt(dr - cr)}</b></span>

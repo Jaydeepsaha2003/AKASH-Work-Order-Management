@@ -12,16 +12,32 @@ import ImportData from './pages/ImportData'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
 import Companies from './pages/Companies'
+import ActivityLog from './pages/ActivityLog'
 import Sidebar from './components/Sidebar'
 import UpdateBanner from './components/UpdateBanner'
 import { PAGE_META } from './components/nav'
+import { getSession, setSession, clearSession } from './lib/session'
 
 export default function App(): React.JSX.Element {
-  const [user, setUser] = useState<AuthUser | null>(null)
+  const [user, setUserState] = useState<AuthUser | null>(() => getSession())
   const [page, setPage] = useState<Page>('dashboard')
   const [companies, setCompanies] = useState<Company[]>([])
   const [activeCompany, setActiveCompany] = useState<Company | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // tell the main process who is acting (for the activity log), incl. on a restored session
+  useEffect(() => {
+    if (user) window.api?.session?.setUser(user.username)
+  }, [user])
+
+  const setUser = (u: AuthUser): void => {
+    setSession(u)
+    setUserState(u)
+  }
+  const logout = (): void => {
+    clearSession()
+    setUserState(null)
+  }
 
   const loadCompanies = useCallback(async () => {
     const [list, active] = await Promise.all([
@@ -61,7 +77,7 @@ export default function App(): React.JSX.Element {
         page={page}
         onNavigate={setPage}
         username={user.username}
-        onLogout={() => setUser(null)}
+        onLogout={logout}
         companies={companies}
         activeCompany={activeCompany}
         onSwitchCompany={switchCompany}
@@ -74,10 +90,10 @@ export default function App(): React.JSX.Element {
             <MetaIcon className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-heading text-[18px] font-bold leading-tight text-slate-800">
+            <h1 className="font-heading text-[19px] font-bold leading-tight text-slate-800">
               {meta.label}
             </h1>
-            <p className="text-[12.5px] text-slate-500">{meta.subtitle}</p>
+            <p className="text-[13.5px] text-slate-500">{meta.subtitle}</p>
           </div>
         </header>
 
@@ -96,6 +112,7 @@ export default function App(): React.JSX.Element {
             {page === 'import' && <ImportData onDone={() => setPage('dashboard')} />}
             {page === 'settings' && <Settings onNavigate={setPage} />}
             {page === 'companies' && <Companies onChanged={loadCompanies} />}
+            {page === 'activity' && <ActivityLog />}
           </div>
         </main>
       </div>

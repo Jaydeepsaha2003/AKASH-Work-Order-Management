@@ -168,7 +168,7 @@ export default function ViewDetails(): React.JSX.Element {
         </div>
         <DownloadMenu build={buildFull} label="Download Full" />
         <DownloadMenu build={buildDeductions} label="Deduction Only" variant="ghost" />
-        <div className="ml-auto text-sm text-slate-500">
+        <div className="ml-auto text-[16px] text-slate-500">
           {filtered.length} record{filtered.length === 1 ? '' : 's'}
         </div>
       </div>
@@ -197,7 +197,7 @@ function TotalCard({
 }): React.JSX.Element {
   return (
     <div className={`rounded-xl bg-gradient-to-r ${color} px-5 py-3 text-white shadow-glow`}>
-      <div className="text-[12px] uppercase tracking-wide text-white/80">{label}</div>
+      <div className="text-[13px] uppercase tracking-wide text-white/80">{label}</div>
       <div className="tabular font-heading text-lg font-bold">₹ {formatAmt(value)}</div>
     </div>
   )

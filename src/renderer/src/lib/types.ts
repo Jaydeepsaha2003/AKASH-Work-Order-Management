@@ -72,6 +72,16 @@ export interface Company {
   logo: string | null
 }
 
+export interface ActivityRow {
+  id: number
+  ts: string
+  username: string | null
+  company_name: string | null
+  action: string | null
+  entity: string | null
+  summary: string | null
+}
+
 export type Page =
   | 'dashboard'
   | 'create'
@@ -83,3 +93,4 @@ export type Page =
   | 'import'
   | 'settings'
   | 'companies'
+  | 'activity'

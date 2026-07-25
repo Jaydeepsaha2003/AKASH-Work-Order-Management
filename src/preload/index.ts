@@ -51,6 +51,13 @@ const api = {
     remove: (id: number) => ipcRenderer.invoke('company:delete', { id }),
     setActive: (id: number) => ipcRenderer.invoke('company:setActive', { id })
   },
+  session: {
+    setUser: (username: string) => ipcRenderer.invoke('session:setUser', { username })
+  },
+  activity: {
+    list: () => ipcRenderer.invoke('activity:list'),
+    clear: () => ipcRenderer.invoke('activity:clear')
+  },
   app: {
     version: () => ipcRenderer.invoke('app:version')
   },

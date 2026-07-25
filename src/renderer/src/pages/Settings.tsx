@@ -121,7 +121,7 @@ export default function Settings({
       <div className="mx-auto max-w-3xl space-y-4 pb-4">
         <div>
           <h1 className="font-heading text-2xl font-bold text-slate-800">Settings</h1>
-          <p className="text-[15px] text-slate-500">Updates, data backup, and account.</p>
+          <p className="text-[16px] text-slate-500">Updates, data backup, and account.</p>
         </div>
 
         {/* Application & updates */}
@@ -132,9 +132,9 @@ export default function Settings({
         >
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="text-[13px] text-slate-500">Current version</div>
+              <div className="text-[14px] text-slate-500">Current version</div>
               <div className="font-heading text-xl font-bold text-slate-800">v{version || '—'}</div>
-              <div className={`mt-1 text-[13.5px] ${updateLine.tone}`}>{updateLine.text}</div>
+              <div className={`mt-1 text-[14.5px] ${updateLine.tone}`}>{updateLine.text}</div>
             </div>
             <button className="btn-primary" onClick={checkUpdates} disabled={checking}>
               {checking ? (
@@ -168,10 +168,10 @@ export default function Settings({
                 )}
               </div>
               <div>
-                <div className="font-heading text-[15px] font-semibold text-slate-800">
+                <div className="font-heading text-[16px] font-semibold text-slate-800">
                   Backup database
                 </div>
-                <p className="mt-0.5 text-[13px] text-slate-500">
+                <p className="mt-0.5 text-[14px] text-slate-500">
                   Save all your data to a single <b>.sqlite</b> file you can store or copy to another
                   PC.
                 </p>
@@ -191,10 +191,10 @@ export default function Settings({
                 )}
               </div>
               <div>
-                <div className="font-heading text-[15px] font-semibold text-slate-800">
+                <div className="font-heading text-[16px] font-semibold text-slate-800">
                   Restore from backup
                 </div>
-                <p className="mt-0.5 text-[13px] text-slate-500">
+                <p className="mt-0.5 text-[14px] text-slate-500">
                   Load a <b>.sqlite</b> backup — <span className="text-rose-600">replaces</span>{' '}
                   current data and restarts the app.
                 </p>
@@ -247,7 +247,7 @@ function Section({
         <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${tint} text-white`}>
           <Icon className="h-4.5 w-4.5" />
         </div>
-        <h2 className="font-heading text-[16px] font-semibold text-slate-800">{title}</h2>
+        <h2 className="font-heading text-[17px] font-semibold text-slate-800">{title}</h2>
       </div>
       <div className="space-y-4">{children}</div>
     </div>
@@ -256,7 +256,7 @@ function Section({
 
 function Note({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
-    <div className="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2.5 text-[13px] leading-relaxed text-slate-500">
+    <div className="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2.5 text-[14px] leading-relaxed text-slate-500">
       <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
       <span>{children}</span>
     </div>
@@ -279,8 +279,8 @@ function LinkRow({
     >
       <CheckCircle2 className="h-5 w-5 text-brand-500" />
       <div className="min-w-0 flex-1">
-        <div className="font-heading text-[14.5px] font-semibold text-slate-800">{title}</div>
-        <div className="truncate text-[13px] text-slate-500">{sub}</div>
+        <div className="font-heading text-[15.5px] font-semibold text-slate-800">{title}</div>
+        <div className="truncate text-[14px] text-slate-500">{sub}</div>
       </div>
       <ChevronRight className="h-5 w-5 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-500" />
     </button>

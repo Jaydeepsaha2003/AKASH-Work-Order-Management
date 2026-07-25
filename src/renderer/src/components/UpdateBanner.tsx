@@ -31,7 +31,7 @@ export default function UpdateBanner(): React.JSX.Element | null {
     <div className="fixed bottom-5 right-5 z-50 w-80 animate-fade-in">
       <div className="overflow-hidden rounded-2xl border border-brand-200 bg-white shadow-glow">
         <div className="app-gradient flex items-center justify-between px-4 py-2.5 text-white">
-          <div className="flex items-center gap-2 font-heading text-sm font-semibold">
+          <div className="flex items-center gap-2 font-heading text-[16px] font-semibold">
             <Sparkles className="h-4 w-4" />
             {state === 'ready' ? 'Update ready' : 'App update'}
           </div>
@@ -42,7 +42,7 @@ export default function UpdateBanner(): React.JSX.Element | null {
 
         <div className="p-4">
           {state === 'available' && (
-            <p className="flex items-center gap-2 text-[13.5px] text-slate-600">
+            <p className="flex items-center gap-2 text-[14.5px] text-slate-600">
               <Download className="h-4 w-4 text-brand-600" />
               Downloading version {status.version}…
             </p>
@@ -50,7 +50,7 @@ export default function UpdateBanner(): React.JSX.Element | null {
 
           {state === 'downloading' && (
             <div>
-              <p className="mb-2 text-[13.5px] text-slate-600">
+              <p className="mb-2 text-[14.5px] text-slate-600">
                 Downloading update… <b>{status.percent ?? 0}%</b>
               </p>
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
@@ -64,7 +64,7 @@ export default function UpdateBanner(): React.JSX.Element | null {
 
           {state === 'ready' && (
             <div>
-              <p className="text-[13.5px] leading-relaxed text-slate-600">
+              <p className="text-[14.5px] leading-relaxed text-slate-600">
                 Version <b className="text-slate-800">{status.version}</b> has been downloaded.
                 Restart to apply it — your data stays safe.
               </p>
@@ -76,7 +76,7 @@ export default function UpdateBanner(): React.JSX.Element | null {
               </button>
               <button
                 onClick={() => setDismissed(true)}
-                className="mt-2 w-full text-center text-[12.5px] text-slate-400 hover:text-slate-600"
+                className="mt-2 w-full text-center text-[13.5px] text-slate-400 hover:text-slate-600"
               >
                 Later
               </button>

@@ -37,7 +37,7 @@ export default function ChangePassword({
       <div className="card w-full max-w-md p-7">
         <button
           onClick={onDone}
-          className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-brand-600"
+          className="mb-4 flex items-center gap-1.5 text-[16px] font-semibold text-slate-500 hover:text-brand-600"
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
@@ -47,7 +47,7 @@ export default function ChangePassword({
           </div>
           <div>
             <h2 className="font-heading text-lg font-bold text-slate-800">Change Password</h2>
-            <p className="text-sm text-slate-500">for {username}</p>
+            <p className="text-[16px] text-slate-500">for {username}</p>
           </div>
         </div>
 

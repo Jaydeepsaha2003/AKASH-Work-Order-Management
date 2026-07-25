@@ -39,16 +39,19 @@ export default function DownloadMenu({
         <ChevronDown className="h-4 w-4 opacity-80" />
       </button>
       {open && (
-        <div className="absolute right-0 z-30 mt-1 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+        <div className="dropdown-panel absolute right-0 z-30 mt-1.5 w-56">
+          <div className="px-4 pb-1 pt-2 text-[12px] font-semibold uppercase tracking-wide text-slate-400">
+            Download as
+          </div>
           <button
-            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13.5px] font-semibold text-slate-700 hover:bg-emerald-50"
+            className="dropdown-item font-semibold hover:bg-emerald-50 hover:text-emerald-700"
             onClick={() => run(exportExcel)}
           >
             <FileSpreadsheet className="h-4.5 w-4.5 text-emerald-600" /> Excel (.xlsx)
           </button>
-          <div className="h-px bg-slate-100" />
+          <div className="dropdown-divider" />
           <button
-            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13.5px] font-semibold text-slate-700 hover:bg-rose-50"
+            className="dropdown-item font-semibold hover:bg-rose-50 hover:text-rose-700"
             onClick={() => run(exportPDF)}
           >
             <FileText className="h-4.5 w-4.5 text-rose-600" /> PDF (.pdf)

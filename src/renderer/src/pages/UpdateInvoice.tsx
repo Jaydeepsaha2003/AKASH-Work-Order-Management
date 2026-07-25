@@ -159,7 +159,7 @@ export default function UpdateInvoice(): React.JSX.Element {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600">
+        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[16px] font-semibold text-slate-600">
           <input
             type="checkbox"
             checked={editMode}
@@ -171,7 +171,7 @@ export default function UpdateInvoice(): React.JSX.Element {
           />
           Edit Mode (edit received invoices)
         </label>
-        <div className="flex items-center gap-1.5 text-sm text-slate-400">
+        <div className="flex items-center gap-1.5 text-[16px] text-slate-400">
           <MousePointerClick className="h-4 w-4" /> Double-click a row to load it
         </div>
       </div>
@@ -191,11 +191,11 @@ export default function UpdateInvoice(): React.JSX.Element {
       {/* form */}
       <div className="card min-h-0 flex-1 overflow-auto p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-heading text-[15px] font-semibold text-brand-700">
+          <h2 className="font-heading text-[16px] font-semibold text-brand-700">
             Enter Work Order & Invoice Details
           </h2>
           {picked && (
-            <div className="rounded-lg bg-brand-50 px-3 py-1.5 font-heading text-sm font-semibold text-brand-700">
+            <div className="rounded-lg bg-brand-50 px-3 py-1.5 font-heading text-[16px] font-semibold text-brand-700">
               WO {picked.work_order_no} • Inv {picked.invoice_no} • FY {financialYear(picked.rec_date ? new Date(picked.rec_date) : new Date())}
             </div>
           )}

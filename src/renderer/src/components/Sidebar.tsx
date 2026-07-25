@@ -65,8 +65,8 @@ export default function Sidebar({
             A
           </div>
           <div className={cn('leading-tight transition-opacity', expanded ? 'opacity-100' : 'pointer-events-none opacity-0')}>
-            <div className="whitespace-nowrap font-heading text-[17px] font-bold tracking-wide">AKASH</div>
-            <div className="whitespace-nowrap text-[11px] text-white/50">Work Order System</div>
+            <div className="whitespace-nowrap font-heading text-[18px] font-bold tracking-wide">AKASH</div>
+            <div className="whitespace-nowrap text-[12px] text-white/50">Work Order System</div>
           </div>
         </div>
 
@@ -90,8 +90,8 @@ export default function Sidebar({
             {expanded && (
               <>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[10.5px] uppercase tracking-wide text-white/45">Company</span>
-                  <span className="block truncate font-heading text-[13.5px] font-semibold">
+                  <span className="block text-[11.5px] uppercase tracking-wide text-white/45">Company</span>
+                  <span className="block truncate font-heading text-[14.5px] font-semibold">
                     {activeCompany?.name ?? 'Select…'}
                   </span>
                 </span>
@@ -101,22 +101,22 @@ export default function Sidebar({
           </button>
 
           {expanded && companyOpen && (
-            <div className="absolute left-3 right-3 z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xl">
+            <div className="dropdown-panel absolute left-3 right-3 z-50 mt-1.5 text-slate-700">
               {companies.length > 6 && (
-                <div className="flex items-center gap-2 border-b px-2.5 py-1.5">
+                <div className="dropdown-search">
                   <Search className="h-4 w-4 text-slate-400" />
                   <input
                     autoFocus
-                    className="w-full bg-transparent text-[13px] outline-none"
+                    className="w-full bg-transparent text-[14px] outline-none"
                     placeholder="Search company…"
                     value={companyQ}
                     onChange={(e) => setCompanyQ(e.target.value)}
                   />
                 </div>
               )}
-              <div className="max-h-56 overflow-y-auto py-1">
+              <div className="dropdown-list">
                 {filteredCompanies.length === 0 && (
-                  <div className="px-3 py-2 text-[13px] text-slate-400">No matches</div>
+                  <div className="px-4 py-2 text-[14px] text-slate-400">No matches</div>
                 )}
                 {filteredCompanies.map((c) => (
                   <button
@@ -125,28 +125,32 @@ export default function Sidebar({
                       setCompanyOpen(false)
                       if (c.id !== activeCompany?.id) onSwitchCompany(c.id)
                     }}
-                    className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] hover:bg-brand-50"
+                    className={cn(
+                      'dropdown-item',
+                      c.id === activeCompany?.id && 'dropdown-item-active'
+                    )}
                   >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded bg-slate-100">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100">
                       {c.logo ? (
                         <img src={c.logo} alt="" className="h-full w-full object-contain" />
                       ) : (
-                        <span className="text-[12px] font-bold text-brand-600">
+                        <span className="text-[13px] font-bold text-brand-600">
                           {c.name.charAt(0).toUpperCase()}
                         </span>
                       )}
                     </span>
                     <span className="min-w-0 flex-1 truncate font-medium">{c.name}</span>
-                    {c.id === activeCompany?.id && <Check className="h-4 w-4 text-brand-600" />}
+                    {c.id === activeCompany?.id && <Check className="h-4 w-4 shrink-0 text-brand-600" />}
                   </button>
                 ))}
               </div>
+              <div className="dropdown-divider" />
               <button
                 onClick={() => {
                   setCompanyOpen(false)
                   onNavigate('companies')
                 }}
-                className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-[13px] font-semibold text-brand-700 hover:bg-brand-50"
+                className="dropdown-item font-semibold text-brand-700"
               >
                 <Plus className="h-4 w-4" /> Manage companies
               </button>
@@ -182,12 +186,12 @@ export default function Sidebar({
                 </span>
                 {expanded && (
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-heading text-[14px] font-semibold text-white">
+                    <span className="block truncate font-heading text-[15px] font-semibold text-white">
                       {item.label}
                     </span>
                     <span
                       className={cn(
-                        'block truncate text-[11px]',
+                        'block truncate text-[12px]',
                         active ? 'text-white/70' : 'text-white/40'
                       )}
                     >
@@ -216,7 +220,7 @@ export default function Sidebar({
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.06]">
               <Settings className="h-[18px] w-[18px]" />
             </span>
-            {expanded && <span className="font-heading text-[14px] font-semibold text-white">Settings</span>}
+            {expanded && <span className="font-heading text-[15px] font-semibold text-white">Settings</span>}
           </button>
 
           <div
@@ -225,14 +229,14 @@ export default function Sidebar({
               expanded ? 'px-3' : 'justify-center px-0'
             )}
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-[15px] font-bold text-white">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-[16px] font-bold text-white">
               {username.charAt(0).toUpperCase()}
             </div>
             {expanded && (
               <>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[11px] text-white/45">Signed in as</div>
-                  <div className="truncate font-heading text-[14px] font-semibold">{username}</div>
+                  <div className="truncate text-[12px] text-white/45">Signed in as</div>
+                  <div className="truncate font-heading text-[15px] font-semibold">{username}</div>
                 </div>
                 <button
                   onClick={onLogout}

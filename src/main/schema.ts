@@ -91,6 +91,16 @@ CREATE TABLE IF NOT EXISTS workorders (${WORKORDERS_BODY});
 CREATE TABLE IF NOT EXISTS deductions (${DEDUCTIONS_BODY});
 
 CREATE TABLE IF NOT EXISTS work_order_list (${WO_LIST_BODY});
+
+CREATE TABLE IF NOT EXISTS activity_log (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts           TEXT NOT NULL DEFAULT (datetime('now')),
+  username     TEXT,
+  company_name TEXT,
+  action       TEXT,   -- Created / Updated / Deleted / Imported / etc.
+  entity       TEXT,   -- Work Order / Invoice / Deduction / Company / …
+  summary      TEXT    -- human-readable details
+);
 `
 
 export const INDEX_SQL = `
@@ -99,4 +109,5 @@ CREATE INDEX IF NOT EXISTS idx_wo_status ON workorders (company_id, wo_status);
 CREATE INDEX IF NOT EXISTS idx_wo_no ON workorders (company_id, work_order_no);
 CREATE INDEX IF NOT EXISTS idx_ded_company ON deductions (company_id);
 CREATE INDEX IF NOT EXISTS idx_ded_wo ON deductions (company_id, work_order_no);
+CREATE INDEX IF NOT EXISTS idx_activity_ts ON activity_log (ts DESC);
 `

@@ -79,6 +79,16 @@ export interface CompanyInput {
   logo?: string | null
 }
 
+export interface ActivityRow {
+  id: number
+  ts: string
+  username: string | null
+  company_name: string | null
+  action: string | null
+  entity: string | null
+  summary: string | null
+}
+
 // Payload used when creating / updating a work order (Create WO screen)
 export interface WoCreateInput {
   fin_year: string

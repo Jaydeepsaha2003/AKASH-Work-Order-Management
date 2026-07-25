@@ -63,21 +63,21 @@ export default function Login({ onLogin }: { onLogin: (u: AuthUser) => void }): 
             {['Work Orders', 'Invoices', 'Deductions', 'Outstanding'].map((t) => (
               <span
                 key={t}
-                className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium text-white backdrop-blur"
+                className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[16px] font-medium text-white backdrop-blur"
               >
                 {t}
               </span>
             ))}
           </div>
         </div>
-        <div className="relative text-base text-white/60">v1.0 • Local SQLite database</div>
+        <div className="relative text-[18px] text-white/60">v1.0 • Local SQLite database</div>
       </div>
 
       {/* Right login form */}
       <div className="flex h-full w-full flex-col items-center justify-center p-8 lg:w-1/2">
         <div className="w-full max-w-md">
           <div className="mb-10 text-center">
-            <div className="font-heading text-base font-semibold uppercase tracking-[0.2em] text-brand-500">
+            <div className="font-heading text-[18px] font-semibold uppercase tracking-[0.2em] text-brand-500">
               {greeting}
             </div>
             <h1 className="mt-2 font-heading text-4xl font-bold text-slate-800">Welcome back</h1>
@@ -86,11 +86,11 @@ export default function Login({ onLogin }: { onLogin: (u: AuthUser) => void }): 
 
           <form onSubmit={submit} className="space-y-6">
             <div className="grid gap-2">
-              <label className="text-[15px] font-semibold text-slate-700">User ID</label>
+              <label className="text-[16px] font-semibold text-slate-700">User ID</label>
               <div className="relative">
                 <User className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-400" />
                 <input
-                  className="input h-13 pl-11 text-[16px]"
+                  className="input h-13 pl-11 text-[17px]"
                   value={username}
                   autoFocus
                   onChange={(e) => setUsername(e.target.value)}
@@ -100,12 +100,12 @@ export default function Login({ onLogin }: { onLogin: (u: AuthUser) => void }): 
             </div>
 
             <div className="grid gap-2">
-              <label className="text-[15px] font-semibold text-slate-700">Password</label>
+              <label className="text-[16px] font-semibold text-slate-700">Password</label>
               <div className="flex gap-2.5">
                 <div className="relative flex-1">
                   <Lock className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-400" />
                   <input
-                    className="input h-13 pl-11 text-[16px]"
+                    className="input h-13 pl-11 text-[17px]"
                     type={show ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -124,18 +124,18 @@ export default function Login({ onLogin }: { onLogin: (u: AuthUser) => void }): 
             </div>
 
             {error && (
-              <div className="rounded-lg bg-rose-50 px-4 py-3 text-[15px] font-medium text-rose-600">
+              <div className="rounded-lg bg-rose-50 px-4 py-3 text-[16px] font-medium text-rose-600">
                 {error}
               </div>
             )}
 
-            <button type="submit" className="btn-primary h-13 w-full text-[16px]" disabled={busy}>
+            <button type="submit" className="btn-primary h-13 w-full text-[17px]" disabled={busy}>
               {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogIn className="h-5 w-5" />}
               Sign In
             </button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-slate-400">
+          <p className="mt-8 text-center text-[16px] text-slate-400">
             Default users: <b className="text-slate-500">Prahlad</b> /{' '}
             <b className="text-slate-500">jaydeep</b> — change your password after signing in.
           </p>

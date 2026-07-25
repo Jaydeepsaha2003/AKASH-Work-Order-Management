@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Search } from 'lucide-react'
+import { ChevronDown, Search, Check } from 'lucide-react'
 import { formatDate, toISODate } from '../lib/format'
 
 export function cn(...parts: (string | false | null | undefined)[]): string {
@@ -137,40 +137,120 @@ export function Select({
       >
         <span className={cn(!current && 'text-slate-400')}>{current ? current.label : placeholder}</span>
       </button>
-      <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-5 w-5 text-slate-400" />
+      <ChevronDown
+        className={cn(
+          'pointer-events-none absolute right-2.5 top-2.5 h-5 w-5 text-slate-400 transition-transform',
+          open && 'rotate-180'
+        )}
+      />
       {open && (
-        <div className="absolute z-40 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+        <div className="dropdown-panel absolute z-40 mt-1.5 w-full">
           {showSearch && (
-            <div className="flex items-center gap-2 border-b px-2 py-1.5">
+            <div className="dropdown-search">
               <Search className="h-4 w-4 text-slate-400" />
               <input
                 autoFocus
-                className="w-full bg-transparent text-sm outline-none"
+                className="w-full bg-transparent text-[15px] outline-none"
                 placeholder="Search…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
           )}
-          <div className="max-h-56 overflow-y-auto py-1">
+          <div className="dropdown-list">
             {filtered.length === 0 && (
-              <div className="px-3 py-2 text-sm text-slate-400">No matches</div>
+              <div className="px-3 py-2 text-[15px] text-slate-400">No matches</div>
             )}
             {filtered.map((o) => (
               <button
                 key={o.value}
                 type="button"
-                className={cn(
-                  'block w-full px-3 py-1.5 text-left text-sm hover:bg-brand-50',
-                  o.value === value && 'bg-brand-100 font-semibold'
-                )}
+                className={cn('dropdown-item', o.value === value && 'dropdown-item-active')}
                 onClick={() => {
                   onChange(o.value)
                   setOpen(false)
                   setQ('')
                 }}
               >
-                {o.label}
+                <span className="min-w-0 flex-1 truncate">{o.label}</span>
+                {o.value === value && <Check className="h-4 w-4 shrink-0 text-brand-600" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Editable combo box: type a NEW value or pick an existing one (used for Work Order No on Create WO)
+export function EditableCombo({
+  value,
+  onChange,
+  options,
+  placeholder = 'Select or type…',
+  disabled
+}: {
+  value: string
+  onChange: (v: string) => void
+  options: string[]
+  placeholder?: string
+  disabled?: boolean
+}): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const h = (e: MouseEvent): void => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
+
+  // filter by what's typed; if the exact value is already selected show the full list
+  const q = value.trim().toLowerCase()
+  const filtered =
+    q && !options.some((o) => o.toLowerCase() === q)
+      ? options.filter((o) => o.toLowerCase().includes(q))
+      : options
+
+  return (
+    <div className={cn('relative', disabled && 'pointer-events-none opacity-60')} ref={ref}>
+      <input
+        className="input pr-10"
+        value={value}
+        placeholder={placeholder}
+        disabled={disabled}
+        onChange={(e) => {
+          onChange(e.target.value)
+          setOpen(true)
+        }}
+        onFocus={() => setOpen(true)}
+      />
+      <button
+        type="button"
+        tabIndex={-1}
+        onClick={() => setOpen((v) => !v)}
+        className="absolute right-0 top-0 flex h-full items-center px-2.5 text-slate-400 hover:text-slate-600"
+      >
+        <ChevronDown className={cn('h-5 w-5 transition-transform', open && 'rotate-180')} />
+      </button>
+      {open && filtered.length > 0 && (
+        <div className="dropdown-panel absolute z-40 mt-1.5 w-full">
+          <div className="dropdown-list">
+            {filtered.map((o) => (
+              <button
+                key={o}
+                type="button"
+                className={cn('dropdown-item', o === value && 'dropdown-item-active')}
+                onClick={() => {
+                  onChange(o)
+                  setOpen(false)
+                }}
+              >
+                <span className="min-w-0 flex-1 truncate">{o}</span>
+                {o === value && <Check className="h-4 w-4 shrink-0 text-brand-600" />}
               </button>
             ))}
           </div>
@@ -213,40 +293,40 @@ export function ComboBox({
         className="input flex items-center justify-between text-left"
         onClick={() => setOpen((v) => !v)}
       >
-        <span className={cn(!value && 'text-slate-400')}>{value || placeholder}</span>
-        <ChevronDown className="h-5 w-5 text-slate-400" />
+        <span className={cn('truncate', !value && 'text-slate-400')}>{value || placeholder}</span>
+        <ChevronDown
+          className={cn('h-5 w-5 shrink-0 text-slate-400 transition-transform', open && 'rotate-180')}
+        />
       </button>
       {open && (
-        <div className="absolute z-30 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg">
-          <div className="flex items-center gap-2 border-b px-2 py-1.5">
+        <div className="dropdown-panel absolute z-30 mt-1.5 w-full">
+          <div className="dropdown-search">
             <Search className="h-4 w-4 text-slate-400" />
             <input
               autoFocus
-              className="w-full bg-transparent text-sm outline-none"
+              className="w-full bg-transparent text-[15px] outline-none"
               placeholder="Search…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
           </div>
-          <div className="max-h-56 overflow-y-auto py-1">
+          <div className="dropdown-list">
             {filtered.length === 0 && (
-              <div className="px-3 py-2 text-sm text-slate-400">No matches</div>
+              <div className="px-3 py-2 text-[15px] text-slate-400">No matches</div>
             )}
             {filtered.map((o) => (
               <button
                 key={o}
                 type="button"
-                className={cn(
-                  'block w-full px-3 py-1.5 text-left text-sm hover:bg-brand-50',
-                  o === value && 'bg-brand-100 font-semibold'
-                )}
+                className={cn('dropdown-item', o === value && 'dropdown-item-active')}
                 onClick={() => {
                   onChange(o)
                   setOpen(false)
                   setQ('')
                 }}
               >
-                {o}
+                <span className="min-w-0 flex-1 truncate">{o}</span>
+                {o === value && <Check className="h-4 w-4 shrink-0 text-brand-600" />}
               </button>
             ))}
           </div>
@@ -284,13 +364,13 @@ export function DataTable<T>({
 }): React.JSX.Element {
   return (
     <div className="h-full overflow-auto rounded-xl border border-slate-200">
-      <table className="w-full border-collapse text-[13px]" style={{ minWidth }}>
+      <table className="w-full border-collapse text-[14px]" style={{ minWidth }}>
         <thead className="sticky top-0 z-10">
           <tr className="app-gradient text-left text-white">
             {columns.map((c) => (
               <th
                 key={c.key}
-                className="whitespace-nowrap px-3 py-2.5 font-heading text-[12.5px] font-semibold"
+                className="whitespace-nowrap px-3 py-2.5 font-heading text-[13.5px] font-semibold"
                 style={{ width: c.width, textAlign: c.align ?? (c.numeric ? 'right' : 'left') }}
               >
                 {c.header}
