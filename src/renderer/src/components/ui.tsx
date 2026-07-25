@@ -61,7 +61,7 @@ export function DateInput({
   iso,
   onISO,
   readOnlyLook,
-  placeholder = 'dd-MMM-yy'
+  placeholder = 'dd-mm-yyyy'
 }: {
   iso: string
   onISO: (isoDate: string) => void
@@ -96,34 +96,86 @@ export function DateInput({
   )
 }
 
+// Searchable dropdown (value/label). The search box auto-hides for short lists.
 export function Select({
   value,
   onChange,
   options,
   className,
-  placeholder
+  placeholder = 'Select…',
+  searchable
 }: {
   value: string
   onChange: (v: string) => void
   options: { value: string; label: string }[]
   className?: string
   placeholder?: string
+  searchable?: boolean
 }): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  const [q, setQ] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const h = (e: MouseEvent): void => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
+
+  const showSearch = searchable ?? options.length > 6
+  const current = options.find((o) => o.value === value)
+  const filtered = options.filter((o) => o.label.toLowerCase().includes(q.toLowerCase()))
+
   return (
-    <div className={cn('relative', className)}>
-      <select
-        className="input appearance-none pr-9"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+    <div className={cn('relative', className)} ref={ref}>
+      <button
+        type="button"
+        className="input flex items-center justify-between pr-9 text-left"
+        onClick={() => setOpen((v) => !v)}
       >
-        {placeholder !== undefined && <option value="">{placeholder}</option>}
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+        <span className={cn(!current && 'text-slate-400')}>{current ? current.label : placeholder}</span>
+      </button>
       <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-5 w-5 text-slate-400" />
+      {open && (
+        <div className="absolute z-40 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+          {showSearch && (
+            <div className="flex items-center gap-2 border-b px-2 py-1.5">
+              <Search className="h-4 w-4 text-slate-400" />
+              <input
+                autoFocus
+                className="w-full bg-transparent text-sm outline-none"
+                placeholder="Search…"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+              />
+            </div>
+          )}
+          <div className="max-h-56 overflow-y-auto py-1">
+            {filtered.length === 0 && (
+              <div className="px-3 py-2 text-sm text-slate-400">No matches</div>
+            )}
+            {filtered.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                className={cn(
+                  'block w-full px-3 py-1.5 text-left text-sm hover:bg-brand-50',
+                  o.value === value && 'bg-brand-100 font-semibold'
+                )}
+                onClick={() => {
+                  onChange(o.value)
+                  setOpen(false)
+                  setQ('')
+                }}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

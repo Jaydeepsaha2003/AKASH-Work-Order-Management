@@ -27,22 +27,45 @@ export function toNum(v: unknown): number {
   return isNaN(n) ? 0 : n
 }
 
-// Display an ISO (yyyy-mm-dd) or any parseable date as dd-MMM-yy
+// Display an ISO (yyyy-mm-dd) or any parseable date as dd-MM-yyyy
 export function formatDate(v: string | null | undefined): string {
   if (!v) return ''
-  const iso = new Date(v)
-  if (isValid(iso) && /^\d{4}-\d{2}-\d{2}/.test(v)) return format(iso, 'dd-MMM-yy')
-  // try dd-MMM-yy
-  const p = parse(v, 'dd-MMM-yy', new Date())
-  if (isValid(p)) return format(p, 'dd-MMM-yy')
-  return v
+  const s = String(v).trim()
+  if (!s) return ''
+  // ISO (yyyy-mm-dd…)
+  if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) {
+    const d = new Date(s)
+    if (isValid(d)) return format(d, 'dd-MM-yyyy')
+  }
+  // legacy / other display formats
+  for (const f of ['dd-MM-yyyy', 'dd/MM/yyyy', 'dd-MMM-yyyy', 'dd-MMM-yy']) {
+    const p = parse(s, f, new Date())
+    if (isValid(p)) return format(p, 'dd-MM-yyyy')
+  }
+  const d = new Date(s)
+  if (isValid(d)) return format(d, 'dd-MM-yyyy')
+  return s
 }
 
 // Normalise a user-typed date into ISO yyyy-mm-dd for storage. Returns '' if invalid/blank.
 export function toISODate(v: string | null | undefined): string {
   if (!v || !v.trim()) return ''
   const s = v.trim()
-  const formats = ['dd-MMM-yy', 'dd-MMM-yyyy', 'yyyy-MM-dd', 'dd/MM/yyyy', 'dd-MM-yyyy', 'd-MMM-yy']
+  // ISO first
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) {
+    const p = parse(s, 'yyyy-MM-dd', new Date())
+    if (isValid(p)) return format(p, 'yyyy-MM-dd')
+  }
+  // dd-mm-yyyy is the primary input format
+  const formats = [
+    'dd-MM-yyyy',
+    'dd/MM/yyyy',
+    'd-M-yyyy',
+    'd/M/yyyy',
+    'dd-MM-yy',
+    'dd-MMM-yyyy',
+    'dd-MMM-yy'
+  ]
   for (const f of formats) {
     const p = parse(s, f, new Date())
     if (isValid(p)) return format(p, 'yyyy-MM-dd')
@@ -57,7 +80,7 @@ export function todayISO(): string {
 }
 
 export function todayDisplay(): string {
-  return format(new Date(), 'dd-MMM-yy')
+  return format(new Date(), 'dd-MM-yyyy')
 }
 
 // Financial year for a date: Apr-Mar. e.g. 2025-06-01 -> "2025-26"

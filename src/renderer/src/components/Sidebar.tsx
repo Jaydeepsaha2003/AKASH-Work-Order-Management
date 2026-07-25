@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Settings, LogOut, Building2, ChevronsUpDown, Check, Plus } from 'lucide-react'
+import { Settings, LogOut, Building2, ChevronsUpDown, Check, Plus, Search } from 'lucide-react'
 import type { Page, Company } from '../lib/types'
 import { NAV_ITEMS } from './nav'
 import { cn } from './ui'
@@ -26,7 +26,11 @@ export default function Sidebar({
 }): React.JSX.Element {
   const [expanded, setExpanded] = useState(false)
   const [companyOpen, setCompanyOpen] = useState(false)
+  const [companyQ, setCompanyQ] = useState('')
   const ref = useRef<HTMLDivElement>(null)
+  const filteredCompanies = companies.filter((c) =>
+    c.name.toLowerCase().includes(companyQ.toLowerCase())
+  )
 
   useEffect(() => {
     const h = (e: MouseEvent): void => {
@@ -39,6 +43,7 @@ export default function Sidebar({
   const collapse = (): void => {
     setExpanded(false)
     setCompanyOpen(false)
+    setCompanyQ('')
   }
 
   return (
@@ -97,8 +102,23 @@ export default function Sidebar({
 
           {expanded && companyOpen && (
             <div className="absolute left-3 right-3 z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xl">
+              {companies.length > 6 && (
+                <div className="flex items-center gap-2 border-b px-2.5 py-1.5">
+                  <Search className="h-4 w-4 text-slate-400" />
+                  <input
+                    autoFocus
+                    className="w-full bg-transparent text-[13px] outline-none"
+                    placeholder="Search company…"
+                    value={companyQ}
+                    onChange={(e) => setCompanyQ(e.target.value)}
+                  />
+                </div>
+              )}
               <div className="max-h-56 overflow-y-auto py-1">
-                {companies.map((c) => (
+                {filteredCompanies.length === 0 && (
+                  <div className="px-3 py-2 text-[13px] text-slate-400">No matches</div>
+                )}
+                {filteredCompanies.map((c) => (
                   <button
                     key={c.id}
                     onClick={() => {
