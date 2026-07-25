@@ -19,6 +19,14 @@ import { verifyLogin, changePassword } from './auth'
 import { exportToExcel, saveBinaryFile, type ExportRequest } from './exporter'
 import { importExcel } from './importexcel'
 import { backupDatabase, restoreDatabase } from './backup'
+import {
+  listCompanies,
+  getActiveCompany,
+  createCompany,
+  updateCompany,
+  deleteCompany,
+  setActiveCompany
+} from './company'
 
 export function registerIpc(): void {
   const handle = (channel: string, fn: (args: any, win: BrowserWindow | null) => any): void => {
@@ -55,6 +63,14 @@ export function registerIpc(): void {
   handle('excel:export', (a: ExportRequest, win) => exportToExcel(win, a))
   handle('excel:import', (a: { mode: 'append' | 'replace' }, win) => importExcel(win, a))
   handle('file:save', (a: { defaultName: string; base64: string }, win) => saveBinaryFile(win, a))
+
+  // Companies (multi-tenant)
+  handle('company:list', () => listCompanies())
+  handle('company:active', () => getActiveCompany())
+  handle('company:create', (a) => createCompany(a))
+  handle('company:update', (a) => updateCompany(a.id, a))
+  handle('company:delete', (a) => deleteCompany(a.id))
+  handle('company:setActive', (a) => setActiveCompany(a.id))
 
   // App info + database backup/restore
   handle('app:version', () => app.getVersion())

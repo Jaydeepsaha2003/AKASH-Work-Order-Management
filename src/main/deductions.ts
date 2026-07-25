@@ -1,4 +1,5 @@
 import { getDb } from './db'
+import { getActiveCompanyId } from './company'
 import type { Deduction, DeductionInput, OutstandingRow } from './types'
 
 const num = (v: unknown): number => {
@@ -7,17 +8,21 @@ const num = (v: unknown): number => {
 }
 
 export function listDeductions(): Deduction[] {
-  return getDb().prepare('SELECT * FROM deductions ORDER BY id ASC').all() as Deduction[]
+  return getDb()
+    .prepare('SELECT * FROM deductions WHERE company_id = ? ORDER BY id ASC')
+    .all(getActiveCompanyId()) as Deduction[]
 }
 
-export function saveDeduction(input: DeductionInput): { ok: boolean; message: string; duplicate?: boolean } {
+export function saveDeduction(input: DeductionInput): { ok: boolean; message: string } {
   const db = getDb()
+  const cid = getActiveCompanyId()
   db.prepare(
     `INSERT INTO deductions
-      (fin_year, work_order_no, invoice_no, deduct_date, rec_date, description,
+      (company_id, fin_year, work_order_no, invoice_no, deduct_date, rec_date, description,
        hse_debit, hse_credit, prs_debit, prs_credit, sd_debit, sd_credit, create_status, wo_name)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
+    cid,
     input.fin_year,
     input.work_order_no,
     input.invoice_no,
@@ -43,9 +48,9 @@ export function checkDeductionDuplicate(
 ): boolean {
   const row = getDb()
     .prepare(
-      'SELECT id FROM deductions WHERE fin_year = ? AND work_order_no = ? AND invoice_no = ?'
+      'SELECT id FROM deductions WHERE company_id = ? AND fin_year = ? AND work_order_no = ? AND invoice_no = ?'
     )
-    .get(fin_year, work_order_no, invoice_no)
+    .get(getActiveCompanyId(), fin_year, work_order_no, invoice_no)
   return !!row
 }
 
@@ -57,7 +62,7 @@ export function updateDeduction(input: DeductionInput): { ok: boolean; message: 
       fin_year = ?, work_order_no = ?, invoice_no = ?, deduct_date = ?, rec_date = ?,
       description = ?, hse_debit = ?, hse_credit = ?, prs_debit = ?, prs_credit = ?,
       sd_debit = ?, sd_credit = ?, create_status = ?, wo_name = ?
-     WHERE id = ?`
+     WHERE id = ? AND company_id = ?`
   ).run(
     input.fin_year,
     input.work_order_no,
@@ -73,30 +78,31 @@ export function updateDeduction(input: DeductionInput): { ok: boolean; message: 
     num(input.sd_credit),
     input.create_status,
     input.wo_name,
-    input.id
+    input.id,
+    getActiveCompanyId()
   )
   return { ok: true, message: 'Deduction record updated successfully.' }
 }
 
 export function deleteDeduction(id: number): { ok: boolean; message: string } {
-  getDb().prepare('DELETE FROM deductions WHERE id = ?').run(id)
+  getDb()
+    .prepare('DELETE FROM deductions WHERE id = ? AND company_id = ?')
+    .run(id, getActiveCompanyId())
   return { ok: true, message: 'Row deleted successfully.' }
 }
 
-// WO Outstanding: SD / HSE / PRS balance grouped by work order.
 export function outstanding(): OutstandingRow[] {
-  const rows = getDb()
+  return getDb()
     .prepare(
       `SELECT work_order_no,
               MAX(wo_name) AS wo_name,
-              SUM(sd_debit) - SUM(sd_credit)   AS sd_balance,
-              SUM(hse_debit) - SUM(hse_credit) AS hse_balance,
-              SUM(prs_debit) - SUM(prs_credit) AS prs_balance
+              COALESCE(SUM(sd_debit), 0)  - COALESCE(SUM(sd_credit), 0)  AS sd_balance,
+              COALESCE(SUM(hse_debit), 0) - COALESCE(SUM(hse_credit), 0) AS hse_balance,
+              COALESCE(SUM(prs_debit), 0) - COALESCE(SUM(prs_credit), 0) AS prs_balance
        FROM deductions
-       WHERE work_order_no IS NOT NULL AND TRIM(work_order_no) <> ''
+       WHERE company_id = ? AND work_order_no IS NOT NULL AND TRIM(work_order_no) <> ''
        GROUP BY work_order_no
        ORDER BY work_order_no ASC`
     )
-    .all() as OutstandingRow[]
-  return rows
+    .all(getActiveCompanyId()) as OutstandingRow[]
 }

@@ -1,5 +1,68 @@
-// SQLite schema for the AKASH Work Order Management System.
-// Column layout mirrors the original Excel "Data" and "Deduction" sheets.
+// SQLite schema for the AKASH Work Order Management System (multi-company).
+// Column layout mirrors the original Excel "Data" and "Deduction" sheets,
+// with a company_id scoping every business row.
+
+// Reused for both fresh creation and the migration rebuild, so the constraints stay in sync.
+export const WORKORDERS_BODY = `
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_id       INTEGER NOT NULL DEFAULT 1,
+  fin_year         TEXT,
+  entry_date       TEXT,
+  work_order_no    TEXT,
+  start_date       TEXT,
+  end_date         TEXT,
+  invoice_no       TEXT,
+  invoice_date     TEXT,
+  rec_date         TEXT,
+  gross_value      REAL DEFAULT 0,
+  gst_on_gross     REAL DEFAULT 0,
+  total_amt        REAL DEFAULT 0,
+  wo_status        TEXT DEFAULT 'Created',
+  cancel_remarks   TEXT,
+  income_tax       REAL DEFAULT 0,
+  gst_2            REAL DEFAULT 0,
+  cem_bags         REAL DEFAULT 0,
+  labour_cess      REAL DEFAULT 0,
+  penalty          REAL DEFAULT 0,
+  land_rent        REAL DEFAULT 0,
+  gst_rent_penalty REAL DEFAULT 0,
+  round_off        REAL DEFAULT 0,
+  hse              REAL DEFAULT 0,
+  price_deduction  REAL DEFAULT 0,
+  sd_amt           REAL DEFAULT 0,
+  net_amount       REAL DEFAULT 0,
+  wo_name          TEXT,
+  created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at       TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (company_id, fin_year, work_order_no, invoice_no)
+`
+
+export const DEDUCTIONS_BODY = `
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_id    INTEGER NOT NULL DEFAULT 1,
+  fin_year      TEXT,
+  work_order_no TEXT,
+  invoice_no    TEXT,
+  deduct_date   TEXT,
+  rec_date      TEXT,
+  description   TEXT,
+  hse_debit     REAL DEFAULT 0,
+  hse_credit    REAL DEFAULT 0,
+  prs_debit     REAL DEFAULT 0,
+  prs_credit    REAL DEFAULT 0,
+  sd_debit      REAL DEFAULT 0,
+  sd_credit     REAL DEFAULT 0,
+  create_status TEXT,
+  wo_name       TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+`
+
+export const WO_LIST_BODY = `
+  company_id    INTEGER NOT NULL DEFAULT 1,
+  work_order_no TEXT,
+  wo_name       TEXT,
+  PRIMARY KEY (company_id, work_order_no)
+`
 
 export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS users (
@@ -9,65 +72,31 @@ CREATE TABLE IF NOT EXISTS users (
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE TABLE IF NOT EXISTS workorders (
-  id               INTEGER PRIMARY KEY AUTOINCREMENT,
-  fin_year         TEXT,            -- A  WO Fin-Year
-  entry_date       TEXT,            -- B  Entry Date (ISO yyyy-mm-dd)
-  work_order_no    TEXT,            -- C  Work Order No
-  start_date       TEXT,            -- D  Work Start Date
-  end_date         TEXT,            -- E  Work End Date
-  invoice_no       TEXT,            -- F  Invoice No
-  invoice_date     TEXT,            -- G  Invoice Date
-  rec_date         TEXT,            -- H  Received Date
-  gross_value      REAL DEFAULT 0,  -- I  Gross Value
-  gst_on_gross     REAL DEFAULT 0,  -- J  GST on Gross (= Total - Gross)
-  total_amt        REAL DEFAULT 0,  -- K  Total Amount
-  wo_status        TEXT DEFAULT 'Created',  -- L  Created / Received / Cancelled
-  cancel_remarks   TEXT,            -- M  Cancel Remarks
-  income_tax       REAL DEFAULT 0,  -- N  Income Tax
-  gst_2            REAL DEFAULT 0,  -- O  GST Amt (2%)
-  cem_bags         REAL DEFAULT 0,  -- P  E. Cem Bag & Others
-  labour_cess      REAL DEFAULT 0,  -- Q  Labour Cess
-  penalty          REAL DEFAULT 0,  -- R  Penalty / Water & Elec
-  land_rent        REAL DEFAULT 0,  -- S  Land Rent
-  gst_rent_penalty REAL DEFAULT 0,  -- T  GST (Rent & Penalty)
-  round_off        REAL DEFAULT 0,  -- U  Other & Round off
-  hse              REAL DEFAULT 0,  -- V  With Hold / HSE
-  price_deduction  REAL DEFAULT 0,  -- W  Price Deduction (PRS)
-  sd_amt           REAL DEFAULT 0,  -- X  SD Amount
-  net_amount       REAL DEFAULT 0,  -- Y  Net Amount
-  wo_name          TEXT,            -- Z  Name of Work Order
-  created_at       TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at       TEXT NOT NULL DEFAULT (datetime('now')),
-  UNIQUE (fin_year, work_order_no, invoice_no)
+CREATE TABLE IF NOT EXISTS companies (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  name       TEXT NOT NULL,
+  address    TEXT,
+  gstin      TEXT,
+  logo       TEXT,           -- data-URL (PNG/JPEG) or NULL
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE TABLE IF NOT EXISTS deductions (
-  id            INTEGER PRIMARY KEY AUTOINCREMENT,
-  fin_year      TEXT,          -- A  Fin-Year
-  work_order_no TEXT,          -- B  Work Order No
-  invoice_no    TEXT,          -- C  Invoice No
-  deduct_date   TEXT,          -- D  Deduction Date
-  rec_date      TEXT,          -- E  Received Date
-  description   TEXT,          -- F  Description
-  hse_debit     REAL DEFAULT 0,-- G  HSE (Debit)
-  hse_credit    REAL DEFAULT 0,-- H  HSE (Credit)
-  prs_debit     REAL DEFAULT 0,-- I  PRS (Debit)
-  prs_credit    REAL DEFAULT 0,-- J  PRS (Credit)
-  sd_debit      REAL DEFAULT 0,-- K  SD (Debit)
-  sd_credit     REAL DEFAULT 0,-- L  SD (Credit)
-  create_status TEXT,          -- M  Auto-Generate / Manual
-  wo_name       TEXT,          -- O  Name of Work Order
-  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+CREATE TABLE IF NOT EXISTS app_settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT
 );
 
--- Master list of work orders (name lookup for combo boxes)
-CREATE TABLE IF NOT EXISTS work_order_list (
-  work_order_no TEXT PRIMARY KEY,
-  wo_name       TEXT
-);
+CREATE TABLE IF NOT EXISTS workorders (${WORKORDERS_BODY});
 
-CREATE INDEX IF NOT EXISTS idx_wo_status ON workorders (wo_status);
-CREATE INDEX IF NOT EXISTS idx_wo_no ON workorders (work_order_no);
-CREATE INDEX IF NOT EXISTS idx_ded_wo ON deductions (work_order_no);
+CREATE TABLE IF NOT EXISTS deductions (${DEDUCTIONS_BODY});
+
+CREATE TABLE IF NOT EXISTS work_order_list (${WO_LIST_BODY});
+`
+
+export const INDEX_SQL = `
+CREATE INDEX IF NOT EXISTS idx_wo_company ON workorders (company_id);
+CREATE INDEX IF NOT EXISTS idx_wo_status ON workorders (company_id, wo_status);
+CREATE INDEX IF NOT EXISTS idx_wo_no ON workorders (company_id, work_order_no);
+CREATE INDEX IF NOT EXISTS idx_ded_company ON deductions (company_id);
+CREATE INDEX IF NOT EXISTS idx_ded_wo ON deductions (company_id, work_order_no);
 `

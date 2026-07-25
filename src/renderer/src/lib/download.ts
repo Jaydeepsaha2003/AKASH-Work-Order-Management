@@ -56,17 +56,68 @@ function bufToBase64(buf: ArrayBuffer): string {
 export async function exportPDF(p: DownloadPayload): Promise<void> {
   try {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
+    const pageW = doc.internal.pageSize.getWidth()
 
+    // Active company branding (logo + name/address)
+    let company: { name?: string; address?: string | null; gstin?: string | null; logo?: string | null } | null = null
+    try {
+      company = await window.api.company.active()
+    } catch {
+      company = null
+    }
+
+    let headerBottom = 40
+    let textX = 40
+    if (company?.logo) {
+      try {
+        const fmt = company.logo.includes('image/png')
+          ? 'PNG'
+          : company.logo.includes('image/jpeg') || company.logo.includes('image/jpg')
+            ? 'JPEG'
+            : 'PNG'
+        doc.addImage(company.logo, fmt, 40, 26, 46, 46)
+        textX = 96
+      } catch {
+        /* ignore bad logo */
+      }
+    }
+
+    if (company?.name) {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(15)
+      doc.setTextColor(76, 29, 149)
+      doc.text(company.name, textX, 40)
+      let ly = 54
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8.5)
+      doc.setTextColor(110)
+      if (company.address) {
+        doc.text(String(company.address).replace(/\n/g, ', '), textX, ly)
+        ly += 12
+      }
+      if (company.gstin) {
+        doc.text(`GSTIN: ${company.gstin}`, textX, ly)
+        ly += 12
+      }
+      headerBottom = Math.max(78, ly)
+    }
+
+    // Report title (right-aligned) + timestamp
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(15)
-    doc.setTextColor(76, 29, 149)
-    doc.text(p.title, 40, 38)
-
+    doc.setFontSize(14)
+    doc.setTextColor(30, 30, 40)
+    doc.text(p.title, pageW - 40, 40, { align: 'right' })
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(9)
+    doc.setFontSize(8.5)
     doc.setTextColor(120)
-    doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, 40, 54)
+    doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, pageW - 40, 54, { align: 'right' })
 
+    // separator line
+    doc.setDrawColor(124, 58, 237)
+    doc.setLineWidth(1)
+    doc.line(40, headerBottom, pageW - 40, headerBottom)
+
+    const startY = headerBottom + 10
     const body = p.rows.map((r) => r.map(cell))
     if (p.subtotalCols?.length) {
       const sub: string[] = new Array(p.headers.length).fill('')
@@ -78,7 +129,7 @@ export async function exportPDF(p: DownloadPayload): Promise<void> {
     autoTable(doc, {
       head: [p.headers],
       body,
-      startY: 66,
+      startY,
       styles: { fontSize: 7, cellPadding: 3, overflow: 'linebreak' },
       headStyles: { fillColor: [124, 58, 237], textColor: 255, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [245, 243, 255] },

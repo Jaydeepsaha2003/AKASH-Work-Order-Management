@@ -7,7 +7,8 @@ import {
   Wallet,
   Settings,
   KeyRound,
-  Upload
+  Upload,
+  Building2
 } from 'lucide-react'
 import type { Page } from '../lib/types'
 
@@ -38,5 +39,6 @@ export const PAGE_META: Record<Page, { label: string; subtitle: string; icon: Na
   outstanding: NAV_ITEMS[5],
   settings: { label: 'Settings', subtitle: 'Updates, backup & account', icon: Settings },
   password: { label: 'Change Password', subtitle: 'Account security', icon: KeyRound },
-  import: { label: 'Import Excel', subtitle: 'Load .xlsm / .xlsx data', icon: Upload }
+  import: { label: 'Import Excel', subtitle: 'Load .xlsm / .xlsx data', icon: Upload },
+  companies: { label: 'Companies', subtitle: 'Manage companies & branding', icon: Building2 }
 }

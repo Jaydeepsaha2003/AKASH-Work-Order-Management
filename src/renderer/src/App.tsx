@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Toaster } from 'sonner'
-import type { AuthUser, Page } from './lib/types'
+import type { AuthUser, Company, Page } from './lib/types'
 import Login from './pages/Login'
 import CreateWO from './pages/CreateWO'
 import UpdateInvoice from './pages/UpdateInvoice'
@@ -11,6 +11,7 @@ import ChangePassword from './pages/ChangePassword'
 import ImportData from './pages/ImportData'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
+import Companies from './pages/Companies'
 import Sidebar from './components/Sidebar'
 import UpdateBanner from './components/UpdateBanner'
 import { PAGE_META } from './components/nav'
@@ -18,6 +19,28 @@ import { PAGE_META } from './components/nav'
 export default function App(): React.JSX.Element {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [page, setPage] = useState<Page>('dashboard')
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [activeCompany, setActiveCompany] = useState<Company | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const loadCompanies = useCallback(async () => {
+    const [list, active] = await Promise.all([
+      window.api.company.list(),
+      window.api.company.active()
+    ])
+    setCompanies(list)
+    setActiveCompany(active)
+  }, [])
+
+  useEffect(() => {
+    if (user) loadCompanies()
+  }, [user, loadCompanies])
+
+  async function switchCompany(id: number): Promise<void> {
+    await window.api.company.setActive(id)
+    await loadCompanies()
+    setRefreshKey((k) => k + 1) // remount current page so it refetches scoped data
+  }
 
   if (!user) {
     return (
@@ -39,6 +62,9 @@ export default function App(): React.JSX.Element {
         onNavigate={setPage}
         username={user.username}
         onLogout={() => setUser(null)}
+        companies={companies}
+        activeCompany={activeCompany}
+        onSwitchCompany={switchCompany}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -57,7 +83,7 @@ export default function App(): React.JSX.Element {
 
         {/* Page body */}
         <main className="flex-1 overflow-hidden p-4">
-          <div className="h-full animate-fade-in">
+          <div key={`${page}-${refreshKey}`} className="h-full animate-fade-in">
             {page === 'dashboard' && <Dashboard username={user.username} onNavigate={setPage} />}
             {page === 'create' && <CreateWO />}
             {page === 'invoice' && <UpdateInvoice />}
@@ -69,6 +95,7 @@ export default function App(): React.JSX.Element {
             )}
             {page === 'import' && <ImportData onDone={() => setPage('dashboard')} />}
             {page === 'settings' && <Settings onNavigate={setPage} />}
+            {page === 'companies' && <Companies onChanged={loadCompanies} />}
           </div>
         </main>
       </div>

@@ -64,6 +64,14 @@ export interface AuthUser {
   username: string
 }
 
+export interface Company {
+  id: number
+  name: string
+  address: string | null
+  gstin: string | null
+  logo: string | null
+}
+
 export type Page =
   | 'dashboard'
   | 'create'
@@ -74,3 +82,4 @@ export type Page =
   | 'password'
   | 'import'
   | 'settings'
+  | 'companies'

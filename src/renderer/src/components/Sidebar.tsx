@@ -1,5 +1,6 @@
-import { Settings, LogOut } from 'lucide-react'
-import type { Page } from '../lib/types'
+import { useEffect, useRef, useState } from 'react'
+import { Settings, LogOut, Building2, ChevronsUpDown, Check, Plus } from 'lucide-react'
+import type { Page, Company } from '../lib/types'
 import { NAV_ITEMS } from './nav'
 import { cn } from './ui'
 
@@ -7,13 +8,28 @@ export default function Sidebar({
   page,
   onNavigate,
   username,
-  onLogout
+  onLogout,
+  companies,
+  activeCompany,
+  onSwitchCompany
 }: {
   page: Page
   onNavigate: (p: Page) => void
   username: string
   onLogout: () => void
+  companies: Company[]
+  activeCompany: Company | null
+  onSwitchCompany: (id: number) => void
 }): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const h = (e: MouseEvent): void => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
   return (
     <aside className="app-gradient relative flex h-full w-64 shrink-0 flex-col text-white">
       {/* glow accents */}
@@ -31,6 +47,67 @@ export default function Sidebar({
           <div className="font-heading text-[17px] font-bold tracking-wide">AKASH</div>
           <div className="text-[11px] text-white/70">Work Order System</div>
         </div>
+      </div>
+
+      {/* Company switcher */}
+      <div className="relative px-3 pb-3" ref={ref}>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="flex w-full items-center gap-2.5 rounded-xl bg-white/10 px-2.5 py-2 text-left transition hover:bg-white/15"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
+            {activeCompany?.logo ? (
+              <img src={activeCompany.logo} alt="" className="h-full w-full object-contain" />
+            ) : (
+              <Building2 className="h-4.5 w-4.5 text-brand-700" />
+            )}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[10.5px] uppercase tracking-wide text-white/60">Company</span>
+            <span className="block truncate font-heading text-[13.5px] font-semibold">
+              {activeCompany?.name ?? 'Select…'}
+            </span>
+          </span>
+          <ChevronsUpDown className="h-4 w-4 text-white/60" />
+        </button>
+
+        {open && (
+          <div className="absolute left-3 right-3 z-40 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xl">
+            <div className="max-h-56 overflow-y-auto py-1">
+              {companies.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => {
+                    setOpen(false)
+                    if (c.id !== activeCompany?.id) onSwitchCompany(c.id)
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] hover:bg-brand-50"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded bg-slate-100">
+                    {c.logo ? (
+                      <img src={c.logo} alt="" className="h-full w-full object-contain" />
+                    ) : (
+                      <span className="text-[12px] font-bold text-brand-600">
+                        {c.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-medium">{c.name}</span>
+                  {c.id === activeCompany?.id && <Check className="h-4 w-4 text-brand-600" />}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => {
+                setOpen(false)
+                onNavigate('companies')
+              }}
+              className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-[13px] font-semibold text-brand-700 hover:bg-brand-50"
+            >
+              <Plus className="h-4 w-4" /> Manage companies
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Nav */}

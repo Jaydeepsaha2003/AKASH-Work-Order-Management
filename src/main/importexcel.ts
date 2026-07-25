@@ -1,6 +1,7 @@
 import { dialog, BrowserWindow } from 'electron'
 import ExcelJS from 'exceljs'
 import { getDb } from './db'
+import { getActiveCompanyId } from './company'
 
 export interface ImportResult {
   ok: boolean
@@ -122,32 +123,34 @@ export async function importFromPath(
   }
 
   const db = getDb()
+  const cid = getActiveCompanyId()
   let woInserted = 0
   let woSkipped = 0
   let dedInserted = 0
 
   const tx = db.transaction(() => {
     if (opts.mode === 'replace') {
-      db.prepare('DELETE FROM workorders').run()
-      db.prepare('DELETE FROM deductions').run()
-      db.prepare('DELETE FROM work_order_list').run()
+      // replace only the ACTIVE company's data
+      db.prepare('DELETE FROM workorders WHERE company_id = ?').run(cid)
+      db.prepare('DELETE FROM deductions WHERE company_id = ?').run(cid)
+      db.prepare('DELETE FROM work_order_list WHERE company_id = ?').run(cid)
     }
 
     const woInsert = db.prepare(
       `INSERT OR IGNORE INTO workorders
-        (fin_year, entry_date, work_order_no, start_date, end_date, invoice_no, invoice_date,
+        (company_id, fin_year, entry_date, work_order_no, start_date, end_date, invoice_no, invoice_date,
          rec_date, gross_value, gst_on_gross, total_amt, wo_status, cancel_remarks,
          income_tax, gst_2, cem_bags, labour_cess, penalty, land_rent, gst_rent_penalty,
          round_off, hse, price_deduction, sd_amt, net_amount, wo_name)
-       VALUES (@fin_year, @entry_date, @work_order_no, @start_date, @end_date, @invoice_no,
+       VALUES (@company_id, @fin_year, @entry_date, @work_order_no, @start_date, @end_date, @invoice_no,
          @invoice_date, @rec_date, @gross_value, @gst_on_gross, @total_amt, @wo_status,
          @cancel_remarks, @income_tax, @gst_2, @cem_bags, @labour_cess, @penalty, @land_rent,
          @gst_rent_penalty, @round_off, @hse, @price_deduction, @sd_amt, @net_amount, @wo_name)`
     )
 
     const woListUpsert = db.prepare(
-      `INSERT INTO work_order_list (work_order_no, wo_name) VALUES (?, ?)
-       ON CONFLICT(work_order_no) DO UPDATE SET wo_name = COALESCE(NULLIF(excluded.wo_name, ''), work_order_list.wo_name)`
+      `INSERT INTO work_order_list (company_id, work_order_no, wo_name) VALUES (?, ?, ?)
+       ON CONFLICT(company_id, work_order_no) DO UPDATE SET wo_name = COALESCE(NULLIF(excluded.wo_name, ''), work_order_list.wo_name)`
     )
 
     if (dataWs) {
@@ -165,6 +168,7 @@ export async function importFromPath(
         const woName = text(c(26))
 
         const info = woInsert.run({
+          company_id: cid,
           fin_year: finYear,
           entry_date: isoDate(c(2)) || null,
           work_order_no: workNo,
@@ -194,15 +198,15 @@ export async function importFromPath(
         })
         if (info.changes > 0) woInserted++
         else woSkipped++
-        if (workNo) woListUpsert.run(workNo, woName)
+        if (workNo) woListUpsert.run(cid, workNo, woName)
       })
     }
 
     const dedInsert = db.prepare(
       `INSERT INTO deductions
-        (fin_year, work_order_no, invoice_no, deduct_date, rec_date, description,
+        (company_id, fin_year, work_order_no, invoice_no, deduct_date, rec_date, description,
          hse_debit, hse_credit, prs_debit, prs_credit, sd_debit, sd_credit, create_status, wo_name)
-       VALUES (@fin_year, @work_order_no, @invoice_no, @deduct_date, @rec_date, @description,
+       VALUES (@company_id, @fin_year, @work_order_no, @invoice_no, @deduct_date, @rec_date, @description,
          @hse_debit, @hse_credit, @prs_debit, @prs_credit, @sd_debit, @sd_credit, @create_status, @wo_name)`
     )
 
@@ -214,6 +218,7 @@ export async function importFromPath(
         if (!workNo && !text(c(1))) return
         const woName = text(c(15))
         dedInsert.run({
+          company_id: cid,
           fin_year: text(c(1)),
           work_order_no: workNo,
           invoice_no: text(c(3)),
@@ -230,7 +235,7 @@ export async function importFromPath(
           wo_name: woName || null
         })
         dedInserted++
-        if (workNo) woListUpsert.run(workNo, woName)
+        if (workNo) woListUpsert.run(cid, workNo, woName)
       })
     }
   })

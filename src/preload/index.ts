@@ -43,6 +43,14 @@ const api = {
     check: () => ipcRenderer.invoke('update:check'),
     install: () => ipcRenderer.invoke('update:install')
   },
+  company: {
+    list: () => ipcRenderer.invoke('company:list'),
+    active: () => ipcRenderer.invoke('company:active'),
+    create: (values: unknown) => ipcRenderer.invoke('company:create', values),
+    update: (values: unknown) => ipcRenderer.invoke('company:update', values),
+    remove: (id: number) => ipcRenderer.invoke('company:delete', { id }),
+    setActive: (id: number) => ipcRenderer.invoke('company:setActive', { id })
+  },
   app: {
     version: () => ipcRenderer.invoke('app:version')
   },

@@ -64,6 +64,21 @@ export interface AuthUser {
   username: string
 }
 
+export interface Company {
+  id: number
+  name: string
+  address: string | null
+  gstin: string | null
+  logo: string | null
+}
+
+export interface CompanyInput {
+  name: string
+  address?: string | null
+  gstin?: string | null
+  logo?: string | null
+}
+
 // Payload used when creating / updating a work order (Create WO screen)
 export interface WoCreateInput {
   fin_year: string

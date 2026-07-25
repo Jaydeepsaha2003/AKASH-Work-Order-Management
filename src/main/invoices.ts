@@ -1,4 +1,5 @@
 import { getDb } from './db'
+import { getActiveCompanyId } from './company'
 import type { InvoiceInput } from './types'
 
 const num = (v: unknown): number => {
@@ -7,15 +8,14 @@ const num = (v: unknown): number => {
 }
 
 // Save invoice deductions for an existing work order (Update Inv "Save").
-// Mirrors save_inv_Click: updates the workorder row, marks it "Received",
-// and appends an auto-generated deduction ledger entry.
 export function saveInvoice(input: InvoiceInput): { ok: boolean; message: string } {
   const db = getDb()
+  const cid = getActiveCompanyId()
   const wo = db
     .prepare(
-      'SELECT id, wo_name FROM workorders WHERE fin_year = ? AND work_order_no = ? AND invoice_no = ?'
+      'SELECT id, wo_name FROM workorders WHERE company_id = ? AND fin_year = ? AND work_order_no = ? AND invoice_no = ?'
     )
-    .get(input.fin_year, input.work_order_no, input.invoice_no) as
+    .get(cid, input.fin_year, input.work_order_no, input.invoice_no) as
     | { id: number; wo_name: string | null }
     | undefined
 
@@ -52,13 +52,13 @@ export function saveInvoice(input: InvoiceInput): { ok: boolean; message: string
       wo.id
     )
 
-    // Auto-generate deduction ledger entry (HSE / PRS / SD debits)
     db.prepare(
       `INSERT INTO deductions
-        (fin_year, work_order_no, invoice_no, deduct_date, hse_debit, prs_debit, sd_debit,
+        (company_id, fin_year, work_order_no, invoice_no, deduct_date, hse_debit, prs_debit, sd_debit,
          create_status, wo_name)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'Auto-Generate', ?)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Auto-Generate', ?)`
     ).run(
+      cid,
       input.fin_year,
       input.work_order_no,
       input.invoice_no,
@@ -77,11 +77,12 @@ export function saveInvoice(input: InvoiceInput): { ok: boolean; message: string
 // Update an already-received invoice (Edit Mode) without adding a new ledger row.
 export function updateInvoice(input: InvoiceInput): { ok: boolean; message: string } {
   const db = getDb()
+  const cid = getActiveCompanyId()
   const wo = db
     .prepare(
-      'SELECT id FROM workorders WHERE fin_year = ? AND work_order_no = ? AND invoice_no = ?'
+      'SELECT id FROM workorders WHERE company_id = ? AND fin_year = ? AND work_order_no = ? AND invoice_no = ?'
     )
-    .get(input.fin_year, input.work_order_no, input.invoice_no) as { id: number } | undefined
+    .get(cid, input.fin_year, input.work_order_no, input.invoice_no) as { id: number } | undefined
   if (!wo) return { ok: false, message: 'No matching record found to update.' }
 
   db.prepare(

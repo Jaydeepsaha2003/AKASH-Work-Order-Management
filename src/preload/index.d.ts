@@ -6,7 +6,9 @@ import type {
   AuthUser,
   WoCreateInput,
   InvoiceInput,
-  DeductionInput
+  DeductionInput,
+  Company,
+  CompanyInput
 } from '../main/types'
 
 export interface ExportRequest {
@@ -62,6 +64,14 @@ export interface Api {
     onStatus: (cb: (data: UpdateStatus) => void) => () => void
     check: () => Promise<{ ok: boolean; message?: string }>
     install: () => Promise<{ ok: boolean }>
+  }
+  company: {
+    list: () => Promise<Company[]>
+    active: () => Promise<Company | null>
+    create: (values: CompanyInput) => Promise<Res & { id?: number }>
+    update: (values: CompanyInput & { id: number }) => Promise<Res>
+    remove: (id: number) => Promise<Res>
+    setActive: (id: number) => Promise<Res>
   }
   app: {
     version: () => Promise<string>

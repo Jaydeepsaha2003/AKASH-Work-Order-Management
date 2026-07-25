@@ -21,6 +21,13 @@ Your data lives in a single local SQLite file at:
 The UI uses **Poppins** throughout, with **Calibri** reserved for numbers (aligned, tabular
 figures), a **side navigation bar**, and every report is downloadable as **Excel or PDF**.
 
+**Multiple companies:** the app manages several companies in one place. Use the **company switcher**
+at the top of the sidebar to switch the active company (all screens then show only that company's
+data), and **Companies** (Manage companies) to add/edit/delete companies with a **name, GSTIN,
+address, and logo**. The active company's **logo + name/GSTIN/address are printed on every PDF
+report**. Existing single-company databases upgrade automatically on first launch — your data is
+moved into a default "My Company" and nothing is lost.
+
 | Screen | What it does |
 |--------|--------------|
 | **Dashboard** | Landing page: KPI cards (Turnover, GST, Landed, Net, Work Orders), turnover-by-financial-year bar chart, WO status donut, actionable **Reminder panels** (invoices awaiting receipt, SD/HSE/PRS recoverable, cancelled WOs — each jumps to the relevant screen), top outstanding work orders, and recent activity. |
