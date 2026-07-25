@@ -13,8 +13,10 @@ import {
   CalendarRange
 } from 'lucide-react'
 import type { WorkOrder, OutstandingRow, Page } from '../lib/types'
-import { formatAmt, formatCompactINR, formatDate, financialYear } from '../lib/format'
-import { DateInput } from '../components/ui'
+import { formatAmt, formatCompactINR, formatDate } from '../lib/format'
+import { DateInput, Segmented } from '../components/ui'
+
+type Preset = 'month' | 'fy' | 'all' | 'custom'
 
 // days between an ISO date and today
 function daysSince(iso: string | null): number | null {
@@ -52,6 +54,23 @@ export default function Dashboard({
   const [out, setOut] = useState<OutstandingRow[]>([])
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
+  const [preset, setPreset] = useState<Preset>('all')
+
+  function applyPreset(p: Preset): void {
+    setPreset(p)
+    if (p === 'month') {
+      const r = monthRange()
+      setFrom(r.from)
+      setTo(r.to)
+    } else if (p === 'fy') {
+      const r = fyRange()
+      setFrom(r.from)
+      setTo(r.to)
+    } else if (p === 'all') {
+      setFrom('')
+      setTo('')
+    }
+  }
 
   async function reload(): Promise<void> {
     const [wo, o] = await Promise.all([window.api.wo.list(), window.api.ded.outstanding()])
@@ -170,53 +189,50 @@ export default function Dashboard({
         </div>
 
         {/* Date range filter */}
-        <div className="card flex flex-wrap items-end gap-3 p-4">
-          <div className="flex items-center gap-2 text-brand-700">
-            <CalendarRange className="h-5 w-5" />
-            <span className="font-heading text-[15px] font-semibold">Date range</span>
-          </div>
-          <div className="grid gap-1">
-            <label className="field-label">From (invoice date)</label>
-            <div className="w-40">
-              <DateInput iso={from} onISO={setFrom} />
+        <div className="card flex flex-wrap items-center gap-x-6 gap-y-4 p-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+              <CalendarRange className="h-5 w-5" />
+            </div>
+            <div className="leading-tight">
+              <div className="font-heading text-[15px] font-semibold text-slate-800">Date range</div>
+              <div className="text-[12.5px] text-slate-400">Filters by invoice date</div>
             </div>
           </div>
-          <div className="grid gap-1">
-            <label className="field-label">To</label>
-            <div className="w-40">
-              <DateInput iso={to} onISO={setTo} />
+
+          <div className="flex items-center gap-2">
+            <div className="w-44">
+              <DateInput
+                iso={from}
+                onISO={(v) => {
+                  setFrom(v)
+                  setPreset('custom')
+                }}
+              />
+            </div>
+            <span className="text-slate-300">→</span>
+            <div className="w-44">
+              <DateInput
+                iso={to}
+                onISO={(v) => {
+                  setTo(v)
+                  setPreset('custom')
+                }}
+              />
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              className="btn-ghost h-10"
-              onClick={() => {
-                const r = monthRange()
-                setFrom(r.from)
-                setTo(r.to)
-              }}
-            >
-              This Month
-            </button>
-            <button
-              className="btn-ghost h-10"
-              onClick={() => {
-                const r = fyRange()
-                setFrom(r.from)
-                setTo(r.to)
-              }}
-            >
-              This FY
-            </button>
-            <button
-              className="btn-ghost h-10"
-              onClick={() => {
-                setFrom('')
-                setTo('')
-              }}
-            >
-              All Time
-            </button>
+
+          <div className="ml-auto">
+            <Segmented<Preset>
+              value={preset}
+              onChange={applyPreset}
+              options={[
+                { value: 'month', label: 'This Month' },
+                { value: 'fy', label: 'This FY' },
+                { value: 'all', label: 'All Time' },
+                ...(preset === 'custom' ? [{ value: 'custom' as Preset, label: 'Custom' }] : [])
+              ]}
+            />
           </div>
         </div>
 

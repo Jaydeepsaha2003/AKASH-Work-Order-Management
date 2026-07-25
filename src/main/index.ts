@@ -4,6 +4,9 @@ import { getDb } from './db'
 import { registerIpc } from './ipc'
 import { initUpdater } from './updater'
 
+// Use dd/mm/yyyy in native date pickers
+app.commandLine.appendSwitch('lang', 'en-GB')
+
 let mainWindow: BrowserWindow | null = null
 
 function iconPath(): string {

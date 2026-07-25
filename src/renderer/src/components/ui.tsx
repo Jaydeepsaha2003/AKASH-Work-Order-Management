@@ -57,42 +57,58 @@ export function NumberInput({
 
 // Date input: user types freely, on blur it normalises to dd-MMM-yy for display.
 // Stores ISO via onISO.
+// Native system date picker (calendar popup). Stores/reads ISO yyyy-mm-dd;
+// digits use Calibri (tabular). Field display format follows the app locale (en-GB → dd/mm/yyyy).
 export function DateInput({
   iso,
   onISO,
   readOnlyLook,
-  placeholder = 'dd-mm-yyyy'
+  className
 }: {
   iso: string
   onISO: (isoDate: string) => void
   readOnlyLook?: boolean
-  placeholder?: string
+  className?: string
 }): React.JSX.Element {
-  const [text, setText] = useState(formatDate(iso))
-  useEffect(() => {
-    setText(formatDate(iso))
-  }, [iso])
   return (
     <input
-      className={cn('input', readOnlyLook && 'input-readonly')}
-      value={text}
-      placeholder={placeholder}
-      onChange={(e) => setText(e.target.value)}
-      onBlur={() => {
-        if (!text.trim()) {
-          onISO('')
-          setText('')
-          return
-        }
-        const norm = toISODate(text)
-        if (norm) {
-          onISO(norm)
-          setText(formatDate(norm))
-        } else {
-          setText(formatDate(iso))
-        }
-      }}
+      type="date"
+      className={cn('input tabular', className, readOnlyLook && 'input-readonly')}
+      value={iso || ''}
+      readOnly={readOnlyLook}
+      onChange={(e) => onISO(e.target.value)}
     />
+  )
+}
+
+// Segmented control (pill toggle group)
+export function Segmented<T extends string>({
+  value,
+  onChange,
+  options
+}: {
+  value: T
+  onChange: (v: T) => void
+  options: { value: T; label: string }[]
+}): React.JSX.Element {
+  return (
+    <div className="inline-flex rounded-xl bg-slate-100 p-1">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange(o.value)}
+          className={cn(
+            'rounded-lg px-3.5 py-1.5 text-[14px] font-semibold transition',
+            value === o.value
+              ? 'bg-white text-brand-700 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -218,7 +234,7 @@ export function EditableCombo({
   return (
     <div className={cn('relative', disabled && 'pointer-events-none opacity-60')} ref={ref}>
       <input
-        className="input pr-10"
+        className="input tabular pr-10"
         value={value}
         placeholder={placeholder}
         disabled={disabled}
@@ -249,7 +265,7 @@ export function EditableCombo({
                   setOpen(false)
                 }}
               >
-                <span className="min-w-0 flex-1 truncate">{o}</span>
+                <span className="tabular min-w-0 flex-1 truncate">{o}</span>
                 {o === value && <Check className="h-4 w-4 shrink-0 text-brand-600" />}
               </button>
             ))}
@@ -293,7 +309,7 @@ export function ComboBox({
         className="input flex items-center justify-between text-left"
         onClick={() => setOpen((v) => !v)}
       >
-        <span className={cn('truncate', !value && 'text-slate-400')}>{value || placeholder}</span>
+        <span className={cn('tabular truncate', !value && 'text-slate-400')}>{value || placeholder}</span>
         <ChevronDown
           className={cn('h-5 w-5 shrink-0 text-slate-400 transition-transform', open && 'rotate-180')}
         />
@@ -325,7 +341,7 @@ export function ComboBox({
                   setQ('')
                 }}
               >
-                <span className="min-w-0 flex-1 truncate">{o}</span>
+                <span className="tabular min-w-0 flex-1 truncate">{o}</span>
                 {o === value && <Check className="h-4 w-4 shrink-0 text-brand-600" />}
               </button>
             ))}

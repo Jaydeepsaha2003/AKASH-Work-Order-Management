@@ -292,7 +292,7 @@ export default function CreateWO(): React.JSX.Element {
             />
           </Field>
           <Field label="Invoice No">
-            <TextInput value={form.invoice_no} onChange={(e) => set('invoice_no', e.target.value)} />
+            <TextInput className="tabular" value={form.invoice_no} onChange={(e) => set('invoice_no', e.target.value)} />
           </Field>
           <Field label="GST %">
             <NumberInput value={form.gst_per} onValue={(v) => set('gst_per', v)} disabled={!!editing} />

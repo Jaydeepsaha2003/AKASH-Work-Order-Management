@@ -312,7 +312,7 @@ export default function ManageDeduction(): React.JSX.Element {
           </Field>
 
           <Field label="Invoice No">
-            <TextInput value={form.invoice_no} onChange={(e) => set('invoice_no', e.target.value)} />
+            <TextInput className="tabular" value={form.invoice_no} onChange={(e) => set('invoice_no', e.target.value)} />
           </Field>
           <Field label="Dr. PRS Amt">
             <NumberInput value={form.prs_debit} onValue={(v) => set('prs_debit', v)} />
