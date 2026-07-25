@@ -10,8 +10,7 @@ import {
   RefreshCw,
   CalendarDays,
   XCircle,
-  CalendarRange,
-  Building2
+  CalendarRange
 } from 'lucide-react'
 import type { WorkOrder, Deduction, Page, Company } from '../lib/types'
 import { formatAmt, formatCompactINR, formatDate, todayISO } from '../lib/format'
@@ -231,15 +230,9 @@ export default function Dashboard({
                 <CalendarDays className="h-4 w-4" /> {today}
               </div>
               <h1 className="mt-1 font-heading text-3xl font-bold">
-                {greeting}, {username}! 👋
+                {greeting}, {company?.name || 'there'}! 👋
               </h1>
-              {company?.name && (
-                <div className="mt-1.5 flex items-center gap-2 text-white/90">
-                  <Building2 className="h-4 w-4" />
-                  <span className="font-heading text-[17px] font-semibold">{company.name}</span>
-                </div>
-              )}
-              <p className="mt-1 text-[15px] text-white/70">Showing data for: {rangeLabel}</p>
+              <p className="mt-1.5 text-[15px] text-white/70">Showing data for: {rangeLabel}</p>
             </div>
             <div className="flex items-center gap-3">
               {company?.logo && (
@@ -282,7 +275,7 @@ export default function Dashboard({
           {/* Quick FY filter */}
           <div className="flex items-center gap-2">
             <span className="text-[13px] font-semibold text-slate-500">Quick FY</span>
-            <div className="w-32">
+            <div className="w-44">
               <Select
                 value={fyValue}
                 onChange={pickFY}
@@ -357,7 +350,7 @@ export default function Dashboard({
           <Panel title="Turnover by Financial Year" icon={TrendingUp} className="lg:col-span-2">
             <BarChart data={m.fyData} />
           </Panel>
-          <Panel title="Work Order Status (in range)" icon={CircleDollarSign}>
+          <Panel title="Invoice Status (in range)" icon={CircleDollarSign}>
             <StatusDonut
               created={m.created.length}
               received={m.received.length}
@@ -383,41 +376,46 @@ export default function Dashboard({
             <Empty text="No pending invoices 🎉" />
           ) : (
             <>
-              <div className="mb-3 flex flex-wrap gap-4 text-[14px] text-slate-500">
+              <div className="mb-3 flex flex-wrap items-center gap-4 text-[15px] text-slate-500">
                 <span>
-                  <b className="text-slate-700">{m.pending.length}</b> pending
+                  <b className="tabular text-[17px] text-slate-800">{m.pending.length}</b> pending
                 </span>
                 <span>
-                  Worth <b className="tabular text-slate-700">₹ {formatAmt(m.pendingValue)}</b>
+                  Worth{' '}
+                  <b className="tabular text-[17px] text-slate-800">₹ {formatAmt(m.pendingValue)}</b>
                 </span>
               </div>
-              <div className="max-h-[360px] overflow-auto rounded-xl border border-slate-100">
-                <table className="w-full text-[14px]" style={{ minWidth: 720 }}>
-                  <thead className="sticky top-0">
-                    <tr className="bg-slate-50 text-left text-slate-500">
-                      <th className="px-3 py-2 font-heading font-semibold">Work Order</th>
-                      <th className="px-3 py-2 font-heading font-semibold">Name</th>
-                      <th className="px-3 py-2 font-heading font-semibold">Invoice</th>
-                      <th className="px-3 py-2 font-heading font-semibold">Invoice Date</th>
-                      <th className="px-3 py-2 text-right font-heading font-semibold">Total</th>
-                      <th className="px-3 py-2 text-right font-heading font-semibold">Days Pending</th>
+              <div className="max-h-[380px] overflow-auto rounded-xl border border-slate-100">
+                <table className="w-full text-[15.5px]" style={{ minWidth: 720 }}>
+                  <thead className="sticky top-0 z-10">
+                    <tr className="bg-slate-50 text-left text-[12.5px] uppercase tracking-wide text-slate-500">
+                      <th className="px-4 py-3 font-heading font-semibold">Work Order</th>
+                      <th className="px-4 py-3 font-heading font-semibold">Name</th>
+                      <th className="px-4 py-3 font-heading font-semibold">Invoice</th>
+                      <th className="px-4 py-3 font-heading font-semibold">Invoice Date</th>
+                      <th className="px-4 py-3 text-right font-heading font-semibold">Total</th>
+                      <th className="px-4 py-3 text-right font-heading font-semibold">Days Pending</th>
                     </tr>
                   </thead>
                   <tbody>
                     {m.pending.map(({ r, days }) => (
-                      <tr key={r.id} className="border-t border-slate-100">
-                        <td className="px-3 py-2 font-semibold text-slate-700">{r.work_order_no}</td>
-                        <td className="max-w-[220px] truncate px-3 py-2 text-slate-500">
+                      <tr key={r.id} className="border-t border-slate-100 hover:bg-slate-50/70">
+                        <td className="tabular px-4 py-2.5 font-semibold text-slate-800">
+                          {r.work_order_no}
+                        </td>
+                        <td className="max-w-[240px] truncate px-4 py-2.5 font-medium text-slate-600">
                           {r.wo_name || '—'}
                         </td>
-                        <td className="px-3 py-2 text-slate-600">{r.invoice_no}</td>
-                        <td className="px-3 py-2 text-slate-600">{formatDate(r.invoice_date) || '—'}</td>
-                        <td className="tabular px-3 py-2 text-right font-semibold text-slate-700">
+                        <td className="tabular px-4 py-2.5 text-slate-600">{r.invoice_no}</td>
+                        <td className="tabular px-4 py-2.5 text-slate-600">
+                          {formatDate(r.invoice_date) || '—'}
+                        </td>
+                        <td className="tabular px-4 py-2.5 text-right text-[16px] font-bold text-slate-800">
                           {formatAmt(r.total_amt)}
                         </td>
-                        <td className="px-3 py-2 text-right">
+                        <td className="px-4 py-2.5 text-right">
                           <span
-                            className={`tabular rounded-full px-2 py-0.5 text-[13px] font-semibold ${
+                            className={`tabular rounded-full px-2.5 py-1 text-[13.5px] font-semibold ${
                               days > 60
                                 ? 'bg-rose-100 text-rose-700'
                                 : days > 30
@@ -525,7 +523,7 @@ function BarChart({ data }: { data: { label: string; value: number }[] }): React
         const h = Math.max((d.value / max) * 100, 2)
         return (
           <div key={d.label} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-            <div className="tabular text-[13px] font-semibold text-slate-600">
+            <div className="tabular text-[15px] font-bold text-slate-700">
               {formatCompactINR(d.value)}
             </div>
             <div
@@ -533,7 +531,7 @@ function BarChart({ data }: { data: { label: string; value: number }[] }): React
               style={{ height: `${h}%` }}
               title={`₹ ${formatAmt(d.value)}`}
             />
-            <div className="text-[13px] font-medium text-slate-500">{d.label}</div>
+            <div className="tabular text-[15px] font-semibold text-slate-500">{d.label}</div>
           </div>
         )
       })}

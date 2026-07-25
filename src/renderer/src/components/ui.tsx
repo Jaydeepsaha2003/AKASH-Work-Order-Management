@@ -108,6 +108,7 @@ export function DateInput({
           <CalendarDays className="pointer-events-none h-[18px] w-[18px]" />
           <input
             type="date"
+            tabIndex={-1}
             title="Open calendar"
             value={iso || ''}
             onChange={(e) => onISO(e.target.value)}
@@ -186,10 +187,12 @@ export function Select({
     <div className={cn('relative', className)} ref={ref}>
       <button
         type="button"
-        className="input flex items-center justify-between pr-9 text-left"
+        className="input flex items-center justify-between gap-1 pr-9 text-left"
         onClick={() => setOpen((v) => !v)}
       >
-        <span className={cn(!current && 'text-slate-400')}>{current ? current.label : placeholder}</span>
+        <span className={cn('truncate', !current && 'text-slate-400')}>
+          {current ? current.label : placeholder}
+        </span>
       </button>
       <ChevronDown
         className={cn(

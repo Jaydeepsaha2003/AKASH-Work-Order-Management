@@ -280,169 +280,167 @@ export default function CreateWO(): React.JSX.Element {
   ]
 
   return (
-    <div className="flex h-full flex-col gap-2.5">
-      {/* Form card */}
-      <div className="card p-4">
-        <div className="mb-2.5 flex items-center justify-between">
-          <h2 className="font-heading text-[16px] font-semibold text-brand-700">
+    <div className="flex h-full gap-3">
+      {/* LEFT: form column (fields stacked one per row) */}
+      <div className="card flex w-[360px] shrink-0 flex-col overflow-hidden p-4">
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <h2 className="font-heading text-[15px] font-semibold leading-tight text-brand-700">
             {editing ? 'Edit Work Order' : 'Enter Work Order & Invoice Details'}
           </h2>
-          <div className="flex items-center gap-2 rounded-lg bg-brand-50 px-3 py-1 text-brand-700">
-            <CalendarDays className="h-4 w-4" />
-            <span className="font-heading text-[15px] font-semibold">FY {finYear}</span>
+          <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-50 px-2.5 py-1 font-heading text-[13px] font-semibold text-brand-700">
+            <CalendarDays className="h-3.5 w-3.5" /> FY {finYear}
+          </span>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-auto pr-1">
+          <div className="grid grid-cols-1 gap-2">
+            <Field label="Work Order No">
+              <EditableCombo
+                value={form.work_order_no}
+                onChange={(v) => set('work_order_no', v)}
+                options={names}
+                disabled={!!editing}
+                placeholder="Select or type…"
+              />
+            </Field>
+            <Field label="Invoice No">
+              <TextInput className="tabular" value={form.invoice_no} onChange={(e) => set('invoice_no', e.target.value)} />
+            </Field>
+            <Field label="Invoice Date">
+              <DateInput iso={form.invoice_date} onISO={(v) => set('invoice_date', v)} />
+            </Field>
+            <Field label="Work Start Date">
+              <DateInput iso={form.start_date} onISO={(v) => set('start_date', v)} />
+            </Field>
+            <Field label="Work End Date">
+              <DateInput iso={form.end_date} onISO={(v) => set('end_date', v)} />
+            </Field>
+            <Field label="Gross Value">
+              <NumberInput value={form.gross_value} onValue={(v) => set('gross_value', v)} />
+            </Field>
+            <Field label="GST %">
+              <NumberInput value={form.gst_per} onValue={(v) => set('gst_per', v)} disabled={!!editing} />
+            </Field>
+            <Field label="GST Amt">
+              <NumberInput value={form.gst_amt} onValue={(v) => set('gst_amt', v)} />
+            </Field>
+            <Field label="Total Amt">
+              <TextInput
+                readOnlyLook
+                readOnly
+                value={totalAmt === 'ERR' ? '' : totalAmt}
+                className="tabular text-right font-semibold"
+              />
+            </Field>
+            <Field label="Name of WO">
+              <TextInput className="tabular" value={form.wo_name} onChange={(e) => set('wo_name', e.target.value)} />
+            </Field>
+
+            {editing && (
+              <Field label="WO Status">
+                <Select
+                  value={woStatus}
+                  onChange={setWoStatus}
+                  options={[
+                    { value: 'Created', label: 'Created' },
+                    { value: 'Cancelled', label: 'Cancelled' }
+                  ]}
+                />
+              </Field>
+            )}
+            {editing && woStatus === 'Cancelled' && (
+              <Field label="Cancel Remarks">
+                <TextInput value={cancelRemarks} onChange={(e) => setCancelRemarks(e.target.value)} />
+              </Field>
+            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-5">
-          {/* Row 1 */}
-          <Field label="Work Order No">
-            <EditableCombo
-              value={form.work_order_no}
-              onChange={(v) => set('work_order_no', v)}
-              options={names}
-              disabled={!!editing}
-              placeholder="Select or type…"
-            />
-          </Field>
-          <Field label="Invoice No">
-            <TextInput className="tabular" value={form.invoice_no} onChange={(e) => set('invoice_no', e.target.value)} />
-          </Field>
-          <Field label="Invoice Date">
-            <DateInput iso={form.invoice_date} onISO={(v) => set('invoice_date', v)} />
-          </Field>
-          <Field label="Work Start Date">
-            <DateInput iso={form.start_date} onISO={(v) => set('start_date', v)} />
-          </Field>
-          <Field label="Work End Date">
-            <DateInput iso={form.end_date} onISO={(v) => set('end_date', v)} />
-          </Field>
-
-          {/* Row 2 */}
-          <Field label="Gross Value">
-            <NumberInput value={form.gross_value} onValue={(v) => set('gross_value', v)} />
-          </Field>
-          <Field label="GST %">
-            <NumberInput value={form.gst_per} onValue={(v) => set('gst_per', v)} disabled={!!editing} />
-          </Field>
-          <Field label="GST Amt">
-            <NumberInput value={form.gst_amt} onValue={(v) => set('gst_amt', v)} />
-          </Field>
-          <Field label="Total Amt">
-            <TextInput
-              readOnlyLook
-              readOnly
-              value={totalAmt === 'ERR' ? '' : totalAmt}
-              className="tabular text-right font-semibold"
-            />
-          </Field>
-          <Field label="Name of WO">
-            <TextInput className="tabular" value={form.wo_name} onChange={(e) => set('wo_name', e.target.value)} />
-          </Field>
-
-          {editing && (
-            <Field label="WO Status">
-              <Select
-                value={woStatus}
-                onChange={setWoStatus}
-                options={[
-                  { value: 'Created', label: 'Created' },
-                  { value: 'Cancelled', label: 'Cancelled' }
-                ]}
-              />
-            </Field>
-          )}
-          {editing && woStatus === 'Cancelled' && (
-            <Field label="Cancel Remarks" className="sm:col-span-2 lg:col-span-4">
-              <TextInput value={cancelRemarks} onChange={(e) => setCancelRemarks(e.target.value)} />
-            </Field>
-          )}
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex gap-2">
           {editing ? (
-            <button className="btn-primary" onClick={update}>
+            <button className="btn-primary flex-1" onClick={update}>
               <RefreshCw className="h-4 w-4" /> Update
             </button>
           ) : (
-            <button className="btn-green" onClick={save}>
+            <button className="btn-green flex-1" onClick={save}>
               <Save className="h-4 w-4" /> Save
             </button>
           )}
-          <button className="btn-red" onClick={clear}>
+          <button className="btn-red flex-1" onClick={clear}>
             <Eraser className="h-4 w-4" /> Clear
           </button>
         </div>
       </div>
 
-      {/* List toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          className="input w-52"
-          placeholder="Search…  (comma = AND)"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <DownloadMenu build={buildDownload} />
+      {/* RIGHT: toolbar + table + totals */}
+      <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            className="input w-52"
+            placeholder="Search…  (comma = AND)"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <DownloadMenu build={buildDownload} />
 
-        <div className="ml-auto flex items-center gap-2">
-          <CalendarRange className="h-4 w-4 text-brand-600" />
-          <span className="text-[13px] font-semibold text-slate-500">Range</span>
-          <div className="w-36">
-            <DateInput iso={from} onISO={setFrom} />
-          </div>
-          <span className="text-slate-300">–</span>
-          <div className="w-36">
-            <DateInput iso={to} onISO={setTo} />
-          </div>
-          {(from || to) && (
-            <button
-              onClick={() => {
-                setFrom('')
-                setTo('')
-              }}
-              className="text-[13px] font-semibold text-slate-400 hover:text-brand-600"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Data table */}
-      <div className="min-h-0 flex-1">
-        <DataTable
-          columns={columns}
-          rows={filtered}
-          minWidth={1250}
-          selectedIndex={sel}
-          onSelect={(i) => setSel(i)}
-          onRowDoubleClick={(_i, r) => beginEdit(r)}
-          rowActions={(r) => (
-            <div className="flex items-center justify-center gap-1">
-              <button
-                title="Edit"
-                onClick={() => beginEdit(r)}
-                className="flex h-6 w-6 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-              <button
-                title="Delete"
-                onClick={() => removeRow(r)}
-                className="flex h-6 w-6 items-center justify-center rounded-md text-rose-600 transition hover:bg-rose-100"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+          <div className="ml-auto flex items-center gap-2">
+            <CalendarRange className="h-4 w-4 text-brand-600" />
+            <span className="text-[13px] font-semibold text-slate-500">Range</span>
+            <div className="w-36">
+              <DateInput iso={from} onISO={setFrom} />
             </div>
-          )}
-        />
-      </div>
+            <span className="text-slate-300">–</span>
+            <div className="w-36">
+              <DateInput iso={to} onISO={setTo} />
+            </div>
+            {(from || to) && (
+              <button
+                onClick={() => {
+                  setFrom('')
+                  setTo('')
+                }}
+                className="text-[13px] font-semibold text-slate-400 hover:text-brand-600"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
 
-      {/* Footer totals */}
-      <div className="app-gradient grid grid-cols-3 gap-4 rounded-xl px-6 py-3 text-white">
-        <FooterStat label="Turnover" value={totals.gross} />
-        <FooterStat label="GST Total" value={totals.gst} />
-        <FooterStat label="Landed Amt" value={totals.total} />
+        <div className="min-h-0 flex-1">
+          <DataTable
+            columns={columns}
+            rows={filtered}
+            minWidth={1250}
+            selectedIndex={sel}
+            onSelect={(i) => setSel(i)}
+            onRowDoubleClick={(_i, r) => beginEdit(r)}
+            rowActions={(r) => (
+              <div className="flex items-center justify-center gap-1">
+                <button
+                  title="Edit"
+                  onClick={() => beginEdit(r)}
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  title="Delete"
+                  onClick={() => removeRow(r)}
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-rose-600 transition hover:bg-rose-100"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          />
+        </div>
+
+        <div className="app-gradient grid grid-cols-3 gap-4 rounded-xl px-6 py-2.5 text-white">
+          <FooterStat label="Turnover" value={totals.gross} />
+          <FooterStat label="GST Total" value={totals.gst} />
+          <FooterStat label="Landed Amt" value={totals.total} />
+        </div>
       </div>
     </div>
   )
