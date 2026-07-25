@@ -13,7 +13,7 @@ import {
   CalendarRange
 } from 'lucide-react'
 import type { WorkOrder, OutstandingRow, Page } from '../lib/types'
-import { formatAmt, formatCompactINR, formatDate } from '../lib/format'
+import { formatAmt, formatCompactINR, formatDate, todayISO } from '../lib/format'
 import { DateInput, Segmented } from '../components/ui'
 
 type Preset = 'month' | 'fy' | 'all' | 'custom'
@@ -154,12 +154,8 @@ export default function Dashboard({
     }
   }, [inRange, rows, out])
 
-  const today = new Date().toLocaleDateString('en-IN', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })
+  const weekday = new Date().toLocaleDateString('en-IN', { weekday: 'long' })
+  const today = `${weekday}, ${formatDate(todayISO())}`
 
   const rangeLabel = !from && !to ? 'All time' : `${formatDate(from) || '…'} → ${formatDate(to) || '…'}`
 
@@ -426,7 +422,7 @@ function Panel({
   right?: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div className={`card p-5 ${className ?? ''}`}>
+    <div className={`card p-4 ${className ?? ''}`}>
       <div className="mb-4 flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
           <Icon className="h-4.5 w-4.5" />

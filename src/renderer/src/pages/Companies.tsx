@@ -156,7 +156,7 @@ export default function Companies({
     <div className="h-full overflow-auto pr-1">
       <div className="mx-auto max-w-5xl space-y-4 pb-4">
         {/* Form */}
-        <div className="card p-5">
+        <div className="card p-4">
           <div className="mb-4 flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-500 text-white">
               <Building2 className="h-4.5 w-4.5" />

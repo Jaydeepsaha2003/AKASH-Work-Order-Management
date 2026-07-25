@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Search, Check } from 'lucide-react'
+import { ChevronDown, Search, Check, CalendarDays } from 'lucide-react'
 import { formatDate, toISODate } from '../lib/format'
 
 export function cn(...parts: (string | false | null | undefined)[]): string {
@@ -16,7 +16,7 @@ export function Field({
   className?: string
 }): React.JSX.Element {
   return (
-    <div className={cn('grid gap-1.5', className)}>
+    <div className={cn('grid gap-1', className)}>
       <label className="field-label">{label}</label>
       {children}
     </div>
@@ -57,8 +57,8 @@ export function NumberInput({
 
 // Date input: user types freely, on blur it normalises to dd-MMM-yy for display.
 // Stores ISO via onISO.
-// Native system date picker (calendar popup). Stores/reads ISO yyyy-mm-dd;
-// digits use Calibri (tabular). Field display format follows the app locale (en-GB → dd/mm/yyyy).
+// Date field: always displays dd-mm-yyyy (Calibri), typeable, with a calendar
+// button that opens the native date picker. Stores/reads ISO yyyy-mm-dd.
 export function DateInput({
   iso,
   onISO,
@@ -70,14 +70,70 @@ export function DateInput({
   readOnlyLook?: boolean
   className?: string
 }): React.JSX.Element {
+  const [text, setText] = useState(formatDate(iso))
+  const dateRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    setText(formatDate(iso))
+  }, [iso])
+
+  const commit = (): void => {
+    if (!text.trim()) {
+      onISO('')
+      setText('')
+      return
+    }
+    const norm = toISODate(text)
+    if (norm) {
+      onISO(norm)
+      setText(formatDate(norm))
+    } else {
+      setText(formatDate(iso))
+    }
+  }
+
+  const openPicker = (): void => {
+    try {
+      dateRef.current?.showPicker?.()
+    } catch {
+      /* ignore */
+    }
+  }
+
   return (
-    <input
-      type="date"
-      className={cn('input tabular', className, readOnlyLook && 'input-readonly')}
-      value={iso || ''}
-      readOnly={readOnlyLook}
-      onChange={(e) => onISO(e.target.value)}
-    />
+    <div className="relative">
+      <input
+        className={cn('input tabular pr-9', className, readOnlyLook && 'input-readonly')}
+        value={text}
+        placeholder="dd-mm-yyyy"
+        readOnly={readOnlyLook}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit()
+        }}
+      />
+      {!readOnlyLook && (
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={openPicker}
+          title="Open calendar"
+          className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-brand-600"
+        >
+          <CalendarDays className="h-[18px] w-[18px]" />
+        </button>
+      )}
+      {/* hidden native date input drives the calendar popup */}
+      <input
+        ref={dateRef}
+        type="date"
+        tabIndex={-1}
+        aria-hidden="true"
+        value={iso || ''}
+        onChange={(e) => onISO(e.target.value)}
+        className="pointer-events-none absolute bottom-0 left-3 h-0 w-0 opacity-0"
+      />
+    </div>
   )
 }
 
@@ -225,11 +281,12 @@ export function EditableCombo({
   }, [])
 
   // filter by what's typed; if the exact value is already selected show the full list
+  const safe = options.filter((o): o is string => typeof o === 'string' && o.length > 0)
   const q = value.trim().toLowerCase()
   const filtered =
-    q && !options.some((o) => o.toLowerCase() === q)
-      ? options.filter((o) => o.toLowerCase().includes(q))
-      : options
+    q && !safe.some((o) => o.toLowerCase() === q)
+      ? safe.filter((o) => o.toLowerCase().includes(q))
+      : safe
 
   return (
     <div className={cn('relative', disabled && 'pointer-events-none opacity-60')} ref={ref}>
@@ -300,7 +357,9 @@ export function ComboBox({
     return () => document.removeEventListener('mousedown', h)
   }, [])
 
-  const filtered = options.filter((o) => o.toLowerCase().includes(q.toLowerCase()))
+  const filtered = options.filter(
+    (o) => typeof o === 'string' && o.toLowerCase().includes(q.toLowerCase())
+  )
 
   return (
     <div className="relative" ref={ref}>
@@ -359,6 +418,8 @@ export interface Column<T> {
   align?: 'left' | 'right' | 'center'
   render?: (row: T) => React.ReactNode
   numeric?: boolean
+  // Calibri (tabular) digits without forcing right-alignment — for dates, ids, etc.
+  tabular?: boolean
 }
 
 export function DataTable<T>({
@@ -368,7 +429,9 @@ export function DataTable<T>({
   selectedIndex,
   onSelect,
   onRowDoubleClick,
-  emptyText = 'No records'
+  emptyText = 'No records',
+  rowActions,
+  actionsHeader = 'Actions'
 }: {
   columns: Column<T>[]
   rows: T[]
@@ -377,11 +440,17 @@ export function DataTable<T>({
   onSelect?: (i: number, row: T) => void
   onRowDoubleClick?: (i: number, row: T) => void
   emptyText?: string
+  // when provided, a pinned (always-visible) right column of per-row actions is shown
+  rowActions?: (row: T, i: number) => React.ReactNode
+  actionsHeader?: string
 }): React.JSX.Element {
+  const rowBg = (i: number): string =>
+    selectedIndex === i ? 'bg-brand-100' : i % 2 ? 'bg-slate-50' : 'bg-white'
+
   return (
     <div className="h-full overflow-auto rounded-xl border border-slate-200">
-      <table className="w-full border-collapse text-[14px]" style={{ minWidth }}>
-        <thead className="sticky top-0 z-10">
+      <table className="w-full border-collapse text-[15px]" style={{ minWidth }}>
+        <thead className="sticky top-0 z-20">
           <tr className="app-gradient text-left text-white">
             {columns.map((c) => (
               <th
@@ -392,12 +461,20 @@ export function DataTable<T>({
                 {c.header}
               </th>
             ))}
+            {rowActions && (
+              <th className="sticky right-0 z-30 whitespace-nowrap bg-brand-700 px-3 py-2.5 text-center font-heading text-[13.5px] font-semibold shadow-[-8px_0_10px_-8px_rgba(0,0,0,0.35)]">
+                {actionsHeader}
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={columns.length} className="px-3 py-10 text-center text-slate-400">
+              <td
+                colSpan={columns.length + (rowActions ? 1 : 0)}
+                className="px-3 py-10 text-center text-slate-400"
+              >
                 {emptyText}
               </td>
             </tr>
@@ -407,24 +484,33 @@ export function DataTable<T>({
               key={i}
               onClick={() => onSelect?.(i, row)}
               onDoubleClick={() => onRowDoubleClick?.(i, row)}
-              className={cn(
-                'cursor-pointer border-b border-slate-100 transition',
-                selectedIndex === i ? 'bg-brand-100' : i % 2 ? 'bg-slate-50/60' : 'bg-white',
-                'hover:bg-brand-50'
-              )}
+              className={cn('group cursor-pointer border-b border-slate-100 transition', rowBg(i))}
             >
               {columns.map((c) => (
                 <td
                   key={c.key}
                   className={cn(
-                    'whitespace-nowrap px-3 py-2 text-slate-700',
-                    c.numeric && 'tabular'
+                    'whitespace-nowrap px-3 py-2 text-slate-700 transition-colors group-hover:bg-brand-50/60',
+                    (c.numeric || c.tabular) && 'tabular'
                   )}
                   style={{ textAlign: c.align ?? (c.numeric ? 'right' : 'left') }}
                 >
                   {c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key] ?? '')}
                 </td>
               ))}
+              {rowActions && (
+                <td
+                  className={cn(
+                    'sticky right-0 z-10 whitespace-nowrap px-2 py-1.5 text-center',
+                    rowBg(i),
+                    'group-hover:bg-brand-50',
+                    'shadow-[-8px_0_10px_-8px_rgba(0,0,0,0.18)]'
+                  )}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {rowActions(row, i)}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

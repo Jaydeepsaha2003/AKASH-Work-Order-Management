@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Save, Eraser, RefreshCw, Trash2 } from 'lucide-react'
+import { Save, Eraser, RefreshCw, Trash2, Pencil } from 'lucide-react'
 import type { Deduction, WoListItem } from '../lib/types'
 import { Field, TextInput, NumberInput, DateInput, ComboBox, Select, DataTable, type Column } from '../components/ui'
 import { formatAmt, formatDate, financialYear, toNum, todayISO, errText, fail } from '../lib/format'
@@ -160,9 +160,7 @@ export default function ManageDeduction(): React.JSX.Element {
     }
   }
 
-  async function remove(): Promise<void> {
-    if (sel < 0) return fail('Please select a valid row to delete.')
-    const r = filtered[sel]
+  async function removeRow(r: Deduction): Promise<void> {
     if (!confirm('Delete this deduction entry?')) return
     try {
       const res = await window.api.ded.remove(r.id)
@@ -174,6 +172,11 @@ export default function ManageDeduction(): React.JSX.Element {
     } catch (e) {
       toast.error(errText(e))
     }
+  }
+
+  async function remove(): Promise<void> {
+    if (sel < 0) return fail('Please select a valid row to delete.')
+    await removeRow(filtered[sel])
   }
 
   function buildDownload(): DownloadPayload {
@@ -233,11 +236,11 @@ export default function ManageDeduction(): React.JSX.Element {
   })
 
   const columns: Column<Deduction>[] = [
-    { key: 'fin_year', header: 'Fin-Year', width: 74 },
-    { key: 'work_order_no', header: 'Work Order', width: 95 },
-    { key: 'invoice_no', header: 'Inv No', width: 60 },
-    { key: 'deduct_date', header: 'Deduct Date', width: 92, render: (r) => formatDate(r.deduct_date) },
-    { key: 'rec_date', header: 'Rec Date', width: 90, render: (r) => formatDate(r.rec_date) },
+    { key: 'fin_year', header: 'Fin-Year', width: 74, tabular: true },
+    { key: 'work_order_no', header: 'Work Order', width: 95, tabular: true },
+    { key: 'invoice_no', header: 'Inv No', width: 60, tabular: true },
+    { key: 'deduct_date', header: 'Deduct Date', width: 96, tabular: true, render: (r) => formatDate(r.deduct_date) },
+    { key: 'rec_date', header: 'Rec Date', width: 96, tabular: true, render: (r) => formatDate(r.rec_date) },
     { key: 'description', header: 'Description', width: 150, render: (r) => r.description || '' },
     m('hse_debit', 'HSE Dr'),
     m('hse_credit', 'HSE Cr'),
@@ -275,6 +278,24 @@ export default function ManageDeduction(): React.JSX.Element {
           selectedIndex={sel}
           onSelect={(i) => setSel(i)}
           onRowDoubleClick={(_i, r) => loadRow(r)}
+          rowActions={(r) => (
+            <div className="flex items-center justify-center gap-1">
+              <button
+                title="Edit"
+                onClick={() => loadRow(r)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
+              >
+                <Pencil className="h-[17px] w-[17px]" />
+              </button>
+              <button
+                title="Delete"
+                onClick={() => removeRow(r)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-rose-600 transition hover:bg-rose-100"
+              >
+                <Trash2 className="h-[17px] w-[17px]" />
+              </button>
+            </div>
+          )}
         />
       </div>
 
@@ -286,7 +307,7 @@ export default function ManageDeduction(): React.JSX.Element {
       </div>
 
       {/* form */}
-      <div className="card min-h-0 flex-1 overflow-auto p-5">
+      <div className="card min-h-0 flex-1 overflow-auto p-4">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-heading text-[16px] font-semibold text-brand-700">
             {editId ? 'Edit Deduction Entry' : 'Enter Deduction Details'}

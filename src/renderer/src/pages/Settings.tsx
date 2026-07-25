@@ -242,7 +242,7 @@ function Section({
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div className="card p-5">
+    <div className="card p-4">
       <div className="mb-4 flex items-center gap-2.5">
         <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${tint} text-white`}>
           <Icon className="h-4.5 w-4.5" />

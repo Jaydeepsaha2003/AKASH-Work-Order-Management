@@ -130,12 +130,12 @@ export default function ViewDetails(): React.JSX.Element {
   })
 
   const columns: Column<WorkOrder>[] = [
-    { key: 'fin_year', header: 'Fin Year', width: 78 },
-    { key: 'work_order_no', header: 'Work Order', width: 95 },
+    { key: 'fin_year', header: 'Fin Year', width: 78, tabular: true },
+    { key: 'work_order_no', header: 'Work Order', width: 95, tabular: true },
     { key: 'wo_name', header: 'Name of WO', width: 150, render: (r) => r.wo_name || '' },
-    { key: 'invoice_no', header: 'Inv No', width: 65 },
-    { key: 'invoice_date', header: 'Inv Date', width: 90, render: (r) => formatDate(r.invoice_date) },
-    { key: 'rec_date', header: 'Rec Date', width: 90, render: (r) => formatDate(r.rec_date) },
+    { key: 'invoice_no', header: 'Inv No', width: 65, tabular: true },
+    { key: 'invoice_date', header: 'Inv Date', width: 96, tabular: true, render: (r) => formatDate(r.invoice_date) },
+    { key: 'rec_date', header: 'Rec Date', width: 96, tabular: true, render: (r) => formatDate(r.rec_date) },
     { ...money('gross_value'), header: 'Gross Value' },
     { ...money('gst_on_gross'), header: 'GST/Gross' },
     { ...money('total_amt'), header: 'Total Amt' },

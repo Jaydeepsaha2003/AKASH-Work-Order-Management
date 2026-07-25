@@ -19,13 +19,11 @@ function fmtTs(ts: string): string {
   // stored as UTC "YYYY-MM-DD HH:MM:SS"
   const d = new Date(ts.replace(' ', 'T') + 'Z')
   if (isNaN(d.getTime())) return ts
-  return d.toLocaleString('en-IN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  const p = (n: number): string => String(n).padStart(2, '0')
+  let h = d.getHours()
+  const ap = h >= 12 ? 'PM' : 'AM'
+  h = h % 12 || 12
+  return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(h)}:${p(d.getMinutes())} ${ap}`
 }
 
 export default function ActivityLog(): React.JSX.Element {
@@ -87,7 +85,7 @@ export default function ActivityLog(): React.JSX.Element {
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-slate-200">
-        <table className="w-full border-collapse text-[14px]" style={{ minWidth: 820 }}>
+        <table className="w-full border-collapse text-[15px]" style={{ minWidth: 820 }}>
           <thead className="sticky top-0 z-10">
             <tr className="app-gradient text-left text-white">
               <th className="whitespace-nowrap px-3 py-2.5 font-heading text-[13.5px] font-semibold">

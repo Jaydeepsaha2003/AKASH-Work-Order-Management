@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Save, Eraser, MousePointerClick } from 'lucide-react'
+import { Save, Eraser, MousePointerClick, FilePlus2 } from 'lucide-react'
 import type { WorkOrder } from '../lib/types'
 import { Field, TextInput, NumberInput, DateInput, DataTable, type Column } from '../components/ui'
 import { formatAmt, formatDate, financialYear, toNum, todayISO, errText, fail } from '../lib/format'
@@ -138,12 +138,12 @@ export default function UpdateInvoice(): React.JSX.Element {
   }
 
   const columns: Column<WorkOrder>[] = [
-    { key: 'fin_year', header: 'Fin-Year', width: 78 },
-    { key: 'work_order_no', header: 'Work Order', width: 95 },
+    { key: 'fin_year', header: 'Fin-Year', width: 78, tabular: true },
+    { key: 'work_order_no', header: 'Work Order', width: 95, tabular: true },
     { key: 'wo_name', header: 'Name of WO', width: 150, render: (r) => r.wo_name || '' },
-    { key: 'invoice_no', header: 'Invoice No', width: 75 },
-    { key: 'invoice_date', header: 'Invoice Date', width: 95, render: (r) => formatDate(r.invoice_date) },
-    { key: 'rec_date', header: 'Rec Date', width: 90, render: (r) => formatDate(r.rec_date) },
+    { key: 'invoice_no', header: 'Invoice No', width: 75, tabular: true },
+    { key: 'invoice_date', header: 'Invoice Date', width: 96, tabular: true, render: (r) => formatDate(r.invoice_date) },
+    { key: 'rec_date', header: 'Rec Date', width: 96, tabular: true, render: (r) => formatDate(r.rec_date) },
     { key: 'gross_value', header: 'Gross Value', width: 110, numeric: true, render: (r) => formatAmt(r.gross_value) },
     { key: 'total_amt', header: 'Total Amt', width: 115, numeric: true, render: (r) => formatAmt(r.total_amt) },
     { key: 'wo_status', header: 'WO Status', width: 90, render: (r) => <StatusBadge status={r.wo_status} /> }
@@ -185,11 +185,21 @@ export default function UpdateInvoice(): React.JSX.Element {
           selectedIndex={sel}
           onSelect={(i) => setSel(i)}
           onRowDoubleClick={(_i, r) => pick(r)}
+          actionsHeader="Load"
+          rowActions={(r) => (
+            <button
+              title="Load for invoice entry"
+              onClick={() => pick(r)}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
+            >
+              <FilePlus2 className="h-[17px] w-[17px]" />
+            </button>
+          )}
         />
       </div>
 
       {/* form */}
-      <div className="card min-h-0 flex-1 overflow-auto p-5">
+      <div className="card min-h-0 flex-1 overflow-auto p-4">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-heading text-[16px] font-semibold text-brand-700">
             Enter Work Order & Invoice Details
