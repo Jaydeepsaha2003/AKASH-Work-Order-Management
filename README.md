@@ -41,6 +41,28 @@ Click the **⬆ Import** icon (top-right) to load your existing `.xlsm` / `.xlsx
 Verified against the original file: 137 work orders + 189 deductions import correctly, and the
 resulting SD / HSE / PRS outstanding totals match the Excel sheet to the paisa.
 
+## Download & auto-update
+
+- **Latest installer:** https://github.com/Jaydeepsaha2003/AKASH-Work-Order-Management/releases/latest
+- The app **updates itself**. On launch (and every 6 hours) it checks GitHub Releases; if a newer
+  version exists it downloads it in the background and shows a **"Restart & Update"** pill in the
+  bottom-right. One click applies it — no reinstall, and the local database is untouched.
+
+### Shipping a new version (for the developer)
+
+1. Make your changes.
+2. Bump `"version"` in `package.json` (e.g. `1.0.1`).
+3. Commit, then tag and push:
+
+```bash
+git add -A && git commit -m "Release v1.0.1" && git push
+git tag v1.0.1 && git push origin v1.0.1
+```
+
+The **Build & Release** GitHub Action builds the Windows installer and publishes it (plus
+`latest.yml` + blockmap) to a new GitHub Release. Every running copy of the app picks it up
+automatically. That's the whole process — users never touch GitHub.
+
 ## Developer commands
 
 ```bash
