@@ -63,7 +63,13 @@ export interface Api {
   }
   update: {
     onStatus: (cb: (data: UpdateStatus) => void) => () => void
-    check: () => Promise<{ ok: boolean; message?: string }>
+    check: () => Promise<{
+      ok: boolean
+      message?: string
+      available?: boolean
+      version?: string
+      current?: string
+    }>
     install: () => Promise<{ ok: boolean }>
   }
   company: {

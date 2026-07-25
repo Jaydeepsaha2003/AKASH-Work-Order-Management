@@ -49,10 +49,24 @@ export default function Settings({
       if (!res.ok) {
         setChecking(false)
         setUpdate({ state: 'error', message: res.message })
+        if (res.message === 'dev') toast.message('Update checks only run in the installed app.')
+        else toast.error("Couldn't check for updates right now.")
+        return
+      }
+      // Definitive answer from the main process (independent of background events)
+      if (res.available) {
+        setUpdate({ state: 'available', version: res.version })
+        toast.success(`Update ${res.version} found — downloading…`)
+        // background 'downloading' / 'ready' events take over from here
+      } else {
+        setChecking(false)
+        setUpdate({ state: 'none' })
+        toast.success("You're on the latest version ✓")
       }
     } catch (e) {
       setChecking(false)
       setUpdate({ state: 'error', message: errText(e) })
+      toast.error("Couldn't check for updates right now.")
     }
   }
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { ChevronRight } from 'lucide-react'
 import type { OutstandingRow } from '../lib/types'
-import { DataTable, type Column } from '../components/ui'
 import { formatAmt, todayISO } from '../lib/format'
 import DownloadMenu from '../components/DownloadMenu'
 import type { DownloadPayload } from '../lib/download'
@@ -8,6 +8,7 @@ import type { DownloadPayload } from '../lib/download'
 export default function WoOutstanding(): React.JSX.Element {
   const [rows, setRows] = useState<OutstandingRow[]>([])
   const [search, setSearch] = useState('')
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   useEffect(() => {
     window.api.ded.outstanding().then(setRows)
@@ -18,8 +19,7 @@ export default function WoOutstanding(): React.JSX.Element {
     if (!t) return rows
     return rows.filter(
       (r) =>
-        r.work_order_no.toLowerCase().includes(t) ||
-        (r.wo_name || '').toLowerCase().includes(t)
+        r.work_order_no.toLowerCase().includes(t) || (r.wo_name || '').toLowerCase().includes(t)
     )
   }, [rows, search])
 
@@ -56,32 +56,13 @@ export default function WoOutstanding(): React.JSX.Element {
     }
   }
 
-  const bal = (k: keyof OutstandingRow, header: string): Column<OutstandingRow> => ({
-    key: k as string,
-    header,
-    numeric: true,
-    width: 150,
-    render: (r) => {
-      const v = r[k] as number
-      return <span className={v < 0 ? 'text-rose-600' : ''}>{formatAmt(v)}</span>
-    }
-  })
-
-  const columns: Column<OutstandingRow>[] = [
-    { key: 'work_order_no', header: 'Work Order', width: 130, tabular: true },
-    { key: 'wo_name', tabular: true, header: 'Name of WO', width: 260, render: (r) => r.wo_name || '' },
-    bal('sd_balance', 'SD Balance'),
-    bal('hse_balance', 'HSE Balance'),
-    bal('prs_balance', 'PRS Balance')
-  ]
-
   return (
     <div className="flex h-full gap-4">
       {/* left: table */}
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <div className="flex items-center gap-2">
           <input
-            className="input max-w-xs"
+            className="input max-w-xs text-[15px]"
             placeholder="Search work order…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -89,8 +70,42 @@ export default function WoOutstanding(): React.JSX.Element {
           <DownloadMenu build={buildDownload} />
           <div className="ml-auto text-[16px] text-slate-500">{filtered.length} work orders</div>
         </div>
-        <div className="min-h-0 flex-1">
-          <DataTable columns={columns} rows={filtered} minWidth={760} />
+
+        <div className="card min-h-0 flex-1 overflow-auto p-0">
+          <table className="w-full" style={{ minWidth: 780 }}>
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-slate-50 text-left text-[13px] uppercase tracking-wide text-slate-500">
+                <th className="w-10 px-3 py-3"></th>
+                <th className="px-4 py-3 font-heading font-semibold">Work Order</th>
+                <th className="px-4 py-3 font-heading font-semibold">Name of WO</th>
+                <th className="px-4 py-3 text-right font-heading font-semibold">SD Balance</th>
+                <th className="px-4 py-3 text-right font-heading font-semibold">HSE Balance</th>
+                <th className="px-4 py-3 text-right font-heading font-semibold">PRS Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => {
+                const open = expanded === r.work_order_no
+                return (
+                  <ExpandableRow
+                    key={r.work_order_no}
+                    r={r}
+                    open={open}
+                    onToggle={() =>
+                      setExpanded((cur) => (cur === r.work_order_no ? null : r.work_order_no))
+                    }
+                  />
+                )
+              })}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-[15px] text-slate-400">
+                    No outstanding work orders.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -101,10 +116,141 @@ export default function WoOutstanding(): React.JSX.Element {
         <BigStat label="HSE Total" value={totals.hse} color="from-brand-600 to-brand-500" />
         <BigStat label="PRS Total" value={totals.prs} color="from-teal-600 to-cyan-600" />
         <p className="mt-2 text-[14px] leading-relaxed text-slate-500">
-          Balances are computed per work order as total debits minus total credits across the
-          deduction ledger.
+          Click any row to see the debit (Dr) and credit (Cr) breakdown. Balances are total debits
+          minus total credits across the deduction ledger.
         </p>
       </div>
+    </div>
+  )
+}
+
+function ExpandableRow({
+  r,
+  open,
+  onToggle
+}: {
+  r: OutstandingRow
+  open: boolean
+  onToggle: () => void
+}): React.JSX.Element {
+  const bal = (v: number): React.JSX.Element => (
+    <span className={v < 0 ? 'text-rose-600' : 'text-slate-800'}>{formatAmt(v)}</span>
+  )
+  return (
+    <>
+      <tr
+        onClick={onToggle}
+        className={`cursor-pointer border-t border-slate-100 transition hover:bg-brand-50/50 ${
+          open ? 'bg-brand-50/60' : ''
+        }`}
+      >
+        <td className="px-3 py-3 text-slate-400">
+          <ChevronRight
+            className={`h-4.5 w-4.5 transition-transform ${open ? 'rotate-90 text-brand-600' : ''}`}
+          />
+        </td>
+        <td className="tabular px-4 py-3 text-[15.5px] font-semibold text-slate-800">
+          {r.work_order_no}
+        </td>
+        <td className="max-w-[280px] truncate px-4 py-3 text-[15.5px] font-medium text-slate-600">
+          {r.wo_name || '—'}
+        </td>
+        <td className="tabular px-4 py-3 text-right text-[15.5px] font-semibold">
+          {bal(r.sd_balance)}
+        </td>
+        <td className="tabular px-4 py-3 text-right text-[15.5px] font-semibold">
+          {bal(r.hse_balance)}
+        </td>
+        <td className="tabular px-4 py-3 text-right text-[15.5px] font-semibold">
+          {bal(r.prs_balance)}
+        </td>
+      </tr>
+      {open && (
+        <tr className="border-t border-slate-100 bg-slate-50/60">
+          <td></td>
+          <td colSpan={5} className="px-4 py-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <LedgerCard
+                label="SD"
+                debit={r.sd_debit}
+                credit={r.sd_credit}
+                balance={r.sd_balance}
+                accent="rose"
+              />
+              <LedgerCard
+                label="HSE"
+                debit={r.hse_debit}
+                credit={r.hse_credit}
+                balance={r.hse_balance}
+                accent="brand"
+              />
+              <LedgerCard
+                label="PRS"
+                debit={r.prs_debit}
+                credit={r.prs_credit}
+                balance={r.prs_balance}
+                accent="teal"
+              />
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  )
+}
+
+const ACCENTS: Record<string, { bar: string; chip: string }> = {
+  rose: { bar: 'bg-rose-500', chip: 'bg-rose-100 text-rose-700' },
+  brand: { bar: 'bg-brand-500', chip: 'bg-brand-100 text-brand-700' },
+  teal: { bar: 'bg-teal-500', chip: 'bg-teal-100 text-teal-700' }
+}
+
+function LedgerCard({
+  label,
+  debit,
+  credit,
+  balance,
+  accent
+}: {
+  label: string
+  debit: number
+  credit: number
+  balance: number
+  accent: keyof typeof ACCENTS
+}): React.JSX.Element {
+  const a = ACCENTS[accent]
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-2.5">
+        <span className={`h-2.5 w-2.5 rounded-full ${a.bar}`} />
+        <span className="font-heading text-[15px] font-bold text-slate-700">{label}</span>
+        <span className={`ml-auto rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${a.chip}`}>
+          Ledger
+        </span>
+      </div>
+      <div className="divide-y divide-slate-100">
+        <LedgerLine label="Debit (Dr)" value={debit} />
+        <LedgerLine label="Credit (Cr)" value={credit} />
+        <div className="flex items-center justify-between px-4 py-2.5">
+          <span className="text-[14.5px] font-semibold text-slate-600">Balance</span>
+          <span
+            className={`tabular text-[16px] font-bold ${
+              balance < 0 ? 'text-rose-600' : 'text-slate-800'
+            }`}
+          >
+            ₹ {formatAmt(balance)}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LedgerLine({ label, value }: { label: string; value: number }): React.JSX.Element {
+  return (
+    <div className="flex items-center justify-between px-4 py-2">
+      <span className="text-[14.5px] text-slate-500">{label}</span>
+      <span className="tabular text-[15px] font-semibold text-slate-700">₹ {formatAmt(value)}</span>
     </div>
   )
 }

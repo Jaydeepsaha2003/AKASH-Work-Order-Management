@@ -96,6 +96,12 @@ export function outstanding(): OutstandingRow[] {
     .prepare(
       `SELECT work_order_no,
               MAX(wo_name) AS wo_name,
+              COALESCE(SUM(sd_debit), 0)  AS sd_debit,
+              COALESCE(SUM(sd_credit), 0) AS sd_credit,
+              COALESCE(SUM(hse_debit), 0)  AS hse_debit,
+              COALESCE(SUM(hse_credit), 0) AS hse_credit,
+              COALESCE(SUM(prs_debit), 0)  AS prs_debit,
+              COALESCE(SUM(prs_credit), 0) AS prs_credit,
               COALESCE(SUM(sd_debit), 0)  - COALESCE(SUM(sd_credit), 0)  AS sd_balance,
               COALESCE(SUM(hse_debit), 0) - COALESCE(SUM(hse_credit), 0) AS hse_balance,
               COALESCE(SUM(prs_debit), 0) - COALESCE(SUM(prs_credit), 0) AS prs_balance

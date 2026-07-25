@@ -54,6 +54,12 @@ export interface WoListItem {
 export interface OutstandingRow {
   work_order_no: string
   wo_name: string | null
+  sd_debit: number
+  sd_credit: number
+  hse_debit: number
+  hse_credit: number
+  prs_debit: number
+  prs_credit: number
   sd_balance: number
   hse_balance: number
   prs_balance: number
