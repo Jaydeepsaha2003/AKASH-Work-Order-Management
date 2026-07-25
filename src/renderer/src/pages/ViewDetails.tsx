@@ -132,7 +132,7 @@ export default function ViewDetails(): React.JSX.Element {
   const columns: Column<WorkOrder>[] = [
     { key: 'fin_year', header: 'Fin Year', width: 78, tabular: true },
     { key: 'work_order_no', header: 'Work Order', width: 95, tabular: true },
-    { key: 'wo_name', header: 'Name of WO', width: 150, render: (r) => r.wo_name || '' },
+    { key: 'wo_name', tabular: true, header: 'Name of WO', width: 150, render: (r) => r.wo_name || '' },
     { key: 'invoice_no', header: 'Inv No', width: 65, tabular: true },
     { key: 'invoice_date', header: 'Inv Date', width: 96, tabular: true, render: (r) => formatDate(r.invoice_date) },
     { key: 'rec_date', header: 'Rec Date', width: 96, tabular: true, render: (r) => formatDate(r.rec_date) },

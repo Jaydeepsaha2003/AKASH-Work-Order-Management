@@ -66,7 +66,8 @@ export default function CreateWO(): React.JSX.Element {
   }, [form.gross_value, form.gst_per, form.gst_amt])
 
   const filtered = useMemo(() => {
-    let base = rows
+    // Create WO list shows everything except already-Received work orders
+    let base = rows.filter((r) => (r.wo_status || '').toLowerCase() !== 'received')
     // date range (by invoice date)
     if (from || to) {
       base = base.filter((r) => {
@@ -275,7 +276,7 @@ export default function CreateWO(): React.JSX.Element {
       width: 90,
       render: (r) => <StatusBadge status={r.wo_status} />
     },
-    { key: 'wo_name', header: 'Name of Work Order', width: 160, render: (r) => r.wo_name || '' }
+    { key: 'wo_name', tabular: true, header: 'Name of Work Order', width: 160, render: (r) => r.wo_name || '' }
   ]
 
   return (
@@ -335,7 +336,7 @@ export default function CreateWO(): React.JSX.Element {
             />
           </Field>
           <Field label="Name of WO">
-            <TextInput value={form.wo_name} onChange={(e) => set('wo_name', e.target.value)} />
+            <TextInput className="tabular" value={form.wo_name} onChange={(e) => set('wo_name', e.target.value)} />
           </Field>
 
           {editing && (
@@ -421,16 +422,16 @@ export default function CreateWO(): React.JSX.Element {
               <button
                 title="Edit"
                 onClick={() => beginEdit(r)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
+                className="flex h-6 w-6 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
               >
-                <Pencil className="h-[17px] w-[17px]" />
+                <Pencil className="h-4 w-4" />
               </button>
               <button
                 title="Delete"
                 onClick={() => removeRow(r)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-rose-600 transition hover:bg-rose-100"
+                className="flex h-6 w-6 items-center justify-center rounded-md text-rose-600 transition hover:bg-rose-100"
               >
-                <Trash2 className="h-[17px] w-[17px]" />
+                <Trash2 className="h-4 w-4" />
               </button>
             </div>
           )}

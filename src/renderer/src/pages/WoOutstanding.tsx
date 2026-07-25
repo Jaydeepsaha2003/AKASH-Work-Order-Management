@@ -69,7 +69,7 @@ export default function WoOutstanding(): React.JSX.Element {
 
   const columns: Column<OutstandingRow>[] = [
     { key: 'work_order_no', header: 'Work Order', width: 130, tabular: true },
-    { key: 'wo_name', header: 'Name of WO', width: 260, render: (r) => r.wo_name || '' },
+    { key: 'wo_name', tabular: true, header: 'Name of WO', width: 260, render: (r) => r.wo_name || '' },
     bal('sd_balance', 'SD Balance'),
     bal('hse_balance', 'HSE Balance'),
     bal('prs_balance', 'PRS Balance')

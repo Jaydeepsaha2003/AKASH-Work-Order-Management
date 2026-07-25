@@ -140,7 +140,7 @@ export default function UpdateInvoice(): React.JSX.Element {
   const columns: Column<WorkOrder>[] = [
     { key: 'fin_year', header: 'Fin-Year', width: 78, tabular: true },
     { key: 'work_order_no', header: 'Work Order', width: 95, tabular: true },
-    { key: 'wo_name', header: 'Name of WO', width: 150, render: (r) => r.wo_name || '' },
+    { key: 'wo_name', tabular: true, header: 'Name of WO', width: 150, render: (r) => r.wo_name || '' },
     { key: 'invoice_no', header: 'Invoice No', width: 75, tabular: true },
     { key: 'invoice_date', header: 'Invoice Date', width: 96, tabular: true, render: (r) => formatDate(r.invoice_date) },
     { key: 'rec_date', header: 'Rec Date', width: 96, tabular: true, render: (r) => formatDate(r.rec_date) },
@@ -190,9 +190,9 @@ export default function UpdateInvoice(): React.JSX.Element {
             <button
               title="Load for invoice entry"
               onClick={() => pick(r)}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
             >
-              <FilePlus2 className="h-[17px] w-[17px]" />
+              <FilePlus2 className="h-4 w-4" />
             </button>
           )}
         />
@@ -211,9 +211,9 @@ export default function UpdateInvoice(): React.JSX.Element {
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-x-5 gap-y-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-5">
           <Field label="Work Order No">
-            <TextInput readOnlyLook readOnly value={picked?.work_order_no || ''} />
+            <TextInput readOnlyLook readOnly className="tabular" value={picked?.work_order_no || ''} />
           </Field>
           <Field label="GST Amt (2%)">
             <NumberInput value={ded.gst_2} onValue={(v) => setDed({ ...ded, gst_2: v })} />
@@ -274,7 +274,7 @@ export default function UpdateInvoice(): React.JSX.Element {
           </Field>
         </div>
 
-        <div className="mt-5 flex gap-2">
+        <div className="mt-3 flex gap-2">
           <button className="btn-green" onClick={save}>
             <Save className="h-4 w-4" /> {isEditingReceived ? 'Update' : 'Save'}
           </button>

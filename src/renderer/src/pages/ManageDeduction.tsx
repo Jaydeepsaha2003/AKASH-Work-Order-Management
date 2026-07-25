@@ -249,7 +249,7 @@ export default function ManageDeduction(): React.JSX.Element {
     m('sd_debit', 'SD Dr'),
     m('sd_credit', 'SD Cr'),
     { key: 'create_status', header: 'Status', width: 100, render: (r) => r.create_status || '' },
-    { key: 'wo_name', header: 'Name of WO', width: 140, render: (r) => r.wo_name || '' }
+    { key: 'wo_name', tabular: true, header: 'Name of WO', width: 140, render: (r) => r.wo_name || '' }
   ]
 
   return (
@@ -283,16 +283,16 @@ export default function ManageDeduction(): React.JSX.Element {
               <button
                 title="Edit"
                 onClick={() => loadRow(r)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
+                className="flex h-6 w-6 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
               >
-                <Pencil className="h-[17px] w-[17px]" />
+                <Pencil className="h-4 w-4" />
               </button>
               <button
                 title="Delete"
                 onClick={() => removeRow(r)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-rose-600 transition hover:bg-rose-100"
+                className="flex h-6 w-6 items-center justify-center rounded-md text-rose-600 transition hover:bg-rose-100"
               >
-                <Trash2 className="h-[17px] w-[17px]" />
+                <Trash2 className="h-4 w-4" />
               </button>
             </div>
           )}
@@ -317,7 +317,8 @@ export default function ManageDeduction(): React.JSX.Element {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-x-5 gap-y-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-5">
+          {/* Row 1 — identity & meta */}
           <Field label="Work Order No">
             <ComboBox
               value={form.work_order_no}
@@ -325,33 +326,12 @@ export default function ManageDeduction(): React.JSX.Element {
               options={names.map((n) => n.work_order_no)}
             />
           </Field>
-          <Field label="Dr. SD Amt">
-            <NumberInput value={form.sd_debit} onValue={(v) => set('sd_debit', v)} />
-          </Field>
-          <Field label="Cr. SD Amt">
-            <NumberInput value={form.sd_credit} onValue={(v) => set('sd_credit', v)} />
-          </Field>
-
           <Field label="Invoice No">
             <TextInput className="tabular" value={form.invoice_no} onChange={(e) => set('invoice_no', e.target.value)} />
           </Field>
-          <Field label="Dr. PRS Amt">
-            <NumberInput value={form.prs_debit} onValue={(v) => set('prs_debit', v)} />
-          </Field>
-          <Field label="Cr. PRS Amt">
-            <NumberInput value={form.prs_credit} onValue={(v) => set('prs_credit', v)} />
-          </Field>
-
           <Field label="Deduction Date">
             <DateInput iso={form.deduct_date} onISO={(v) => set('deduct_date', v)} />
           </Field>
-          <Field label="Dr. HSE Amt">
-            <NumberInput value={form.hse_debit} onValue={(v) => set('hse_debit', v)} />
-          </Field>
-          <Field label="Cr. HSE Amt">
-            <NumberInput value={form.hse_credit} onValue={(v) => set('hse_credit', v)} />
-          </Field>
-
           <Field label="Deduc Rec Date">
             <DateInput iso={form.rec_date} onISO={(v) => set('rec_date', v)} />
           </Field>
@@ -365,16 +345,37 @@ export default function ManageDeduction(): React.JSX.Element {
               ]}
             />
           </Field>
+
+          {/* Row 2 — SD / PRS amounts + name */}
+          <Field label="Dr. SD Amt">
+            <NumberInput value={form.sd_debit} onValue={(v) => set('sd_debit', v)} />
+          </Field>
+          <Field label="Cr. SD Amt">
+            <NumberInput value={form.sd_credit} onValue={(v) => set('sd_credit', v)} />
+          </Field>
+          <Field label="Dr. PRS Amt">
+            <NumberInput value={form.prs_debit} onValue={(v) => set('prs_debit', v)} />
+          </Field>
+          <Field label="Cr. PRS Amt">
+            <NumberInput value={form.prs_credit} onValue={(v) => set('prs_credit', v)} />
+          </Field>
           <Field label="Name of Work">
-            <TextInput value={form.wo_name} onChange={(e) => set('wo_name', e.target.value)} />
+            <TextInput className="tabular" value={form.wo_name} onChange={(e) => set('wo_name', e.target.value)} />
           </Field>
 
-          <Field label="Description" className="md:col-span-3">
+          {/* Row 3 — HSE amounts + description */}
+          <Field label="Dr. HSE Amt">
+            <NumberInput value={form.hse_debit} onValue={(v) => set('hse_debit', v)} />
+          </Field>
+          <Field label="Cr. HSE Amt">
+            <NumberInput value={form.hse_credit} onValue={(v) => set('hse_credit', v)} />
+          </Field>
+          <Field label="Description" className="sm:col-span-2 lg:col-span-3">
             <TextInput value={form.description} onChange={(e) => set('description', e.target.value)} />
           </Field>
         </div>
 
-        <div className="mt-5 flex gap-2">
+        <div className="mt-3 flex gap-2">
           {editId ? (
             <button className="btn-primary" onClick={update}>
               <RefreshCw className="h-4 w-4" /> Update

@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Search, Check, CalendarDays } from 'lucide-react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronDown, ChevronUp, ChevronsUpDown, Search, Check, CalendarDays } from 'lucide-react'
 import { formatDate, toISODate } from '../lib/format'
 
 export function cn(...parts: (string | false | null | undefined)[]): string {
@@ -447,20 +447,72 @@ export function DataTable<T>({
   const rowBg = (i: number): string =>
     selectedIndex === i ? 'bg-brand-100' : i % 2 ? 'bg-slate-50' : 'bg-white'
 
+  const [sortKey, setSortKey] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+  const toggleSort = (key: string): void => {
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
+
+  const sorted = useMemo(() => {
+    if (!sortKey) return rows
+    const col = columns.find((c) => c.key === sortKey)
+    const numeric = !!col?.numeric
+    const copy = [...rows]
+    copy.sort((a, b) => {
+      const av = (a as Record<string, unknown>)[sortKey]
+      const bv = (b as Record<string, unknown>)[sortKey]
+      let cmp: number
+      if (numeric) {
+        cmp = (parseFloat(String(av)) || 0) - (parseFloat(String(bv)) || 0)
+      } else {
+        cmp = String(av ?? '').localeCompare(String(bv ?? ''), undefined, { numeric: true })
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+    return copy
+  }, [rows, sortKey, sortDir, columns])
+
   return (
     <div className="h-full overflow-auto rounded-xl border border-slate-200">
       <table className="w-full border-collapse text-[15px]" style={{ minWidth }}>
         <thead className="sticky top-0 z-20">
           <tr className="app-gradient text-left text-white">
-            {columns.map((c) => (
-              <th
-                key={c.key}
-                className="whitespace-nowrap px-3 py-2.5 font-heading text-[13.5px] font-semibold"
-                style={{ width: c.width, textAlign: c.align ?? (c.numeric ? 'right' : 'left') }}
-              >
-                {c.header}
-              </th>
-            ))}
+            {columns.map((c) => {
+              const active = sortKey === c.key
+              const alignRight = (c.align ?? (c.numeric ? 'right' : 'left')) === 'right'
+              return (
+                <th
+                  key={c.key}
+                  onClick={() => toggleSort(c.key)}
+                  title="Click to sort"
+                  className="cursor-pointer select-none whitespace-nowrap px-3 py-2.5 font-heading text-[13.5px] font-semibold transition hover:bg-white/10"
+                  style={{ width: c.width, textAlign: c.align ?? (c.numeric ? 'right' : 'left') }}
+                >
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1',
+                      alignRight && 'flex-row-reverse'
+                    )}
+                  >
+                    {c.header}
+                    {active ? (
+                      sortDir === 'asc' ? (
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      )
+                    ) : (
+                      <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />
+                    )}
+                  </span>
+                </th>
+              )
+            })}
             {rowActions && (
               <th className="sticky right-0 z-30 whitespace-nowrap bg-brand-700 px-3 py-2.5 text-center font-heading text-[13.5px] font-semibold shadow-[-8px_0_10px_-8px_rgba(0,0,0,0.35)]">
                 {actionsHeader}
@@ -479,7 +531,7 @@ export function DataTable<T>({
               </td>
             </tr>
           )}
-          {rows.map((row, i) => (
+          {sorted.map((row, i) => (
             <tr
               key={i}
               onClick={() => onSelect?.(i, row)}
@@ -490,7 +542,7 @@ export function DataTable<T>({
                 <td
                   key={c.key}
                   className={cn(
-                    'whitespace-nowrap px-3 py-2 text-slate-700 transition-colors group-hover:bg-brand-50/60',
+                    'whitespace-nowrap px-3 py-1 text-slate-700 transition-colors group-hover:bg-brand-50/60',
                     (c.numeric || c.tabular) && 'tabular'
                   )}
                   style={{ textAlign: c.align ?? (c.numeric ? 'right' : 'left') }}
@@ -501,7 +553,7 @@ export function DataTable<T>({
               {rowActions && (
                 <td
                   className={cn(
-                    'sticky right-0 z-10 whitespace-nowrap px-2 py-1.5 text-center',
+                    'sticky right-0 z-10 whitespace-nowrap px-2 py-0.5 text-center',
                     rowBg(i),
                     'group-hover:bg-brand-50',
                     'shadow-[-8px_0_10px_-8px_rgba(0,0,0,0.18)]'
