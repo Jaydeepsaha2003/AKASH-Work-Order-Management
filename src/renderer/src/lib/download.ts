@@ -25,11 +25,31 @@ function sumCol(rows: (string | number)[][], c: number): number {
   return s
 }
 
+// Make a company name safe for use in a filename
+function slug(name: string): string {
+  return name
+    .replace(/[\\/:*?"<>|]+/g, '')
+    .trim()
+    .replace(/\s+/g, '_')
+    .slice(0, 40)
+}
+
+// "<Company>_<base>" — prefixes the active company name when available
+async function scopedName(base: string): Promise<string> {
+  try {
+    const c = await window.api.company.active()
+    if (c?.name) return `${slug(c.name)}_${base}`
+  } catch {
+    /* ignore */
+  }
+  return base
+}
+
 // ---- Excel (delegates to the main process ExcelJS writer) ----
 export async function exportExcel(p: DownloadPayload): Promise<void> {
   try {
     const res = await window.api.excel.export({
-      defaultName: `${p.defaultBase}.xlsx`,
+      defaultName: `${await scopedName(p.defaultBase)}.xlsx`,
       headers: p.headers,
       rows: p.rows,
       subtotalCols: p.subtotalCols,
@@ -156,7 +176,8 @@ export async function exportPDF(p: DownloadPayload): Promise<void> {
     }
 
     const base64 = bufToBase64(doc.output('arraybuffer'))
-    const res = await window.api.file.save({ defaultName: `${p.defaultBase}.pdf`, base64 })
+    const pdfBase = company?.name ? `${slug(company.name)}_${p.defaultBase}` : p.defaultBase
+    const res = await window.api.file.save({ defaultName: `${pdfBase}.pdf`, base64 })
     if (res.ok) toast.success('PDF exported successfully.')
     else toast.message(res.message)
   } catch (e) {
