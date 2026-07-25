@@ -60,6 +60,13 @@ export interface Api {
     check: () => Promise<{ ok: boolean; message?: string }>
     install: () => Promise<{ ok: boolean }>
   }
+  app: {
+    version: () => Promise<string>
+  }
+  db: {
+    backup: () => Promise<Res & { path?: string }>
+    restore: () => Promise<Res>
+  }
 }
 
 export interface UpdateStatus {

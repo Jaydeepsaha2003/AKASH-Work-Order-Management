@@ -6,15 +6,29 @@ import { SCHEMA_SQL } from './schema'
 
 let db: Database.Database | null = null
 
+export function getDbPath(): string {
+  return join(app.getPath('userData'), 'akash-wom.sqlite')
+}
+
 export function getDb(): Database.Database {
   if (db) return db
-  const dbPath = join(app.getPath('userData'), 'akash-wom.sqlite')
-  db = new Database(dbPath)
+  db = new Database(getDbPath())
   db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')
   db.exec(SCHEMA_SQL)
   seedUsers()
   return db
+}
+
+export function closeDb(): void {
+  if (db) {
+    try {
+      db.close()
+    } catch {
+      /* ignore */
+    }
+    db = null
+  }
 }
 
 export function hashPassword(pwd: string): string {

@@ -7,9 +7,8 @@ import {
   Table2,
   Scale,
   Wallet,
-  KeyRound,
-  LogOut,
-  Upload
+  Settings as SettingsIcon,
+  LogOut
 } from 'lucide-react'
 import type { AuthUser, Page } from './lib/types'
 import { cn } from './components/ui'
@@ -22,6 +21,7 @@ import WoOutstanding from './pages/WoOutstanding'
 import ChangePassword from './pages/ChangePassword'
 import ImportData from './pages/ImportData'
 import Dashboard from './pages/Dashboard'
+import Settings from './pages/Settings'
 import UpdateBanner from './components/UpdateBanner'
 
 const NAV: { key: Page; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -69,18 +69,11 @@ export default function App(): React.JSX.Element {
             <div className="font-heading text-[14px] font-semibold text-white">{user.username}</div>
           </div>
           <button
-            title="Import Excel data"
-            onClick={() => setPage('import')}
+            title="Settings"
+            onClick={() => setPage('settings')}
             className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white transition hover:bg-white/25"
           >
-            <Upload className="h-4.5 w-4.5" />
-          </button>
-          <button
-            title="Change password"
-            onClick={() => setPage('password')}
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white transition hover:bg-white/25"
-          >
-            <KeyRound className="h-4.5 w-4.5" />
+            <SettingsIcon className="h-4.5 w-4.5" />
           </button>
           <button
             title="Logout"
@@ -128,6 +121,7 @@ export default function App(): React.JSX.Element {
             <ChangePassword username={user.username} onDone={() => setPage('create')} />
           )}
           {page === 'import' && <ImportData onDone={() => setPage('create')} />}
+          {page === 'settings' && <Settings onNavigate={setPage} />}
         </div>
       </main>
 

@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { app, ipcMain, BrowserWindow } from 'electron'
 import {
   listWorkOrders,
   listWoNames,
@@ -18,6 +18,7 @@ import {
 import { verifyLogin, changePassword } from './auth'
 import { exportToExcel, type ExportRequest } from './exporter'
 import { importExcel } from './importexcel'
+import { backupDatabase, restoreDatabase } from './backup'
 
 export function registerIpc(): void {
   const handle = (channel: string, fn: (args: any, win: BrowserWindow | null) => any): void => {
@@ -53,4 +54,9 @@ export function registerIpc(): void {
   // Excel export
   handle('excel:export', (a: ExportRequest, win) => exportToExcel(win, a))
   handle('excel:import', (a: { mode: 'append' | 'replace' }, win) => importExcel(win, a))
+
+  // App info + database backup/restore
+  handle('app:version', () => app.getVersion())
+  handle('db:backup', (_a, win) => backupDatabase(win))
+  handle('db:restore', (_a, win) => restoreDatabase(win))
 }

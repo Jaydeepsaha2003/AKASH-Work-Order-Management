@@ -73,3 +73,4 @@ export type Page =
   | 'outstanding'
   | 'password'
   | 'import'
+  | 'settings'

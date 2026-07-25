@@ -26,6 +26,14 @@ Your data lives in a single local SQLite file at:
 | **View Details** | Full 26-column register with search. Download full report or "deduction data only" to Excel (with subtotals). SD / HSE / PRS totals. |
 | **Manage Deduction** | Dr/Cr ledger for SD, HSE, PRS per work order. Add manual entries, edit, delete, export. Live Dr/Cr/Balance bars. |
 | **WO Outstanding** | SD / HSE / PRS balance per work order (debits − credits) + grand totals. Export. |
+| **Settings** (⚙ header) | Current version + **Check for updates**, **Backup database** (to a single `.sqlite` file), **Restore from backup**, Import from Excel, and Change password. |
+
+### Backup / moving to another computer
+
+Settings → **Backup database** writes a single `.sqlite` file containing everything. To move the
+app (with data) to another PC: install the app there, then Settings → **Restore from backup** and
+pick that file — it replaces the local data and restarts. The database also survives every
+auto-update, so your client keeps their data when the app updates itself.
 
 All GST math, the duplicate-entry check, the Net Amount formula, the auto-ledger, and the
 delete guards replicate the original VBA exactly.

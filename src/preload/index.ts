@@ -39,6 +39,13 @@ const api = {
     },
     check: () => ipcRenderer.invoke('update:check'),
     install: () => ipcRenderer.invoke('update:install')
+  },
+  app: {
+    version: () => ipcRenderer.invoke('app:version')
+  },
+  db: {
+    backup: () => ipcRenderer.invoke('db:backup'),
+    restore: () => ipcRenderer.invoke('db:restore')
   }
 }
 
