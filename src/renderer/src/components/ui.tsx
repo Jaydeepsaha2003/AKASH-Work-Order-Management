@@ -405,6 +405,8 @@ export interface Column<T> {
   numeric?: boolean
   // Calibri (tabular) digits without forcing right-alignment — for dates, ids, etc.
   tabular?: boolean
+  // Use a lighter (550) weight instead of the default semibold (600)
+  light?: boolean
 }
 
 export function DataTable<T>({
@@ -430,7 +432,7 @@ export function DataTable<T>({
   actionsHeader?: string
 }): React.JSX.Element {
   const rowBg = (i: number): string =>
-    selectedIndex === i ? 'bg-brand-100' : i % 2 ? 'bg-slate-50' : 'bg-white'
+    selectedIndex === i ? 'bg-brand-100' : i % 2 ? 'bg-brand-50' : 'bg-white'
 
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -464,7 +466,7 @@ export function DataTable<T>({
 
   return (
     <div className="h-full overflow-auto rounded-xl border border-slate-200">
-      <table className="w-full border-collapse text-[15px]" style={{ minWidth }}>
+      <table className="w-full border-collapse text-[16.5px]" style={{ minWidth }}>
         <thead className="sticky top-0 z-20">
           <tr className="app-gradient text-left text-white">
             {columns.map((c) => {
@@ -527,7 +529,8 @@ export function DataTable<T>({
                 <td
                   key={c.key}
                   className={cn(
-                    'whitespace-nowrap px-3 py-1 text-slate-700 transition-colors group-hover:bg-brand-50/60',
+                    'whitespace-nowrap px-3 py-1.5 text-slate-700 transition-colors group-hover:bg-brand-50/60',
+                    c.light ? 'font-medium' : 'font-semibold',
                     (c.numeric || c.tabular) && 'tabular'
                   )}
                   style={{ textAlign: c.align ?? (c.numeric ? 'right' : 'left') }}

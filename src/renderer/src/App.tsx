@@ -99,18 +99,20 @@ export default function App(): React.JSX.Element {
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Top bar */}
-        <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-6 py-3.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
-            <MetaIcon className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="font-heading text-[19px] font-bold leading-tight text-slate-800">
-              {meta.label}
-            </h1>
-            <p className="text-[13.5px] text-slate-500">{meta.subtitle}</p>
-          </div>
-        </header>
+        {/* Top bar (hidden on pages that have their own inline heading) */}
+        {page !== 'create' && page !== 'invoice' && page !== 'deduction' && (
+          <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-6 py-3.5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+              <MetaIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="font-heading text-[19px] font-bold leading-tight text-slate-800">
+                {meta.label}
+              </h1>
+              <p className="text-[13.5px] text-slate-500">{meta.subtitle}</p>
+            </div>
+          </header>
+        )}
 
         {/* Page body */}
         <main className="flex-1 overflow-hidden p-4">
@@ -126,7 +128,15 @@ export default function App(): React.JSX.Element {
             {page === 'password' && (
               <ChangePassword username={user.username} onDone={() => setPage('dashboard')} />
             )}
-            {page === 'import' && <ImportData onDone={() => setPage('dashboard')} />}
+            {page === 'import' && (
+              <ImportData
+                company={activeCompany}
+                onDone={() => {
+                  setRefreshKey((k) => k + 1) // ensure every page refetches the active company's data
+                  setPage('dashboard')
+                }}
+              />
+            )}
             {page === 'settings' && <Settings onNavigate={setPage} />}
             {page === 'companies' && <Companies onChanged={loadCompanies} />}
             {page === 'activity' && <ActivityLog />}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Save, Eraser, Pencil, RefreshCw, Trash2, CalendarDays, CalendarRange } from 'lucide-react'
+import { Save, Eraser, Pencil, RefreshCw, Trash2, CalendarDays, CalendarRange, FilePlus2, Search } from 'lucide-react'
 import type { WorkOrder } from '../lib/types'
 import { Field, TextInput, NumberInput, DateInput, DataTable, Select, EditableCombo, type Column } from '../components/ui'
 import DownloadMenu from '../components/DownloadMenu'
@@ -259,8 +259,8 @@ export default function CreateWO(): React.JSX.Element {
   }
 
   const columns: Column<WorkOrder>[] = [
-    { key: 'fin_year', header: 'Fin-Year', width: 78, tabular: true },
-    { key: 'entry_date', header: 'Entry Date', width: 96, tabular: true, render: (r) => formatDate(r.entry_date) },
+    { key: 'fin_year', header: 'Fin-Year', width: 78, tabular: true, light: true },
+    { key: 'entry_date', header: 'Entry Date', width: 96, tabular: true, light: true, render: (r) => formatDate(r.entry_date) },
     { key: 'work_order_no', header: 'Work Order', width: 95, tabular: true },
     { key: 'start_date', header: 'Start Date', width: 96, tabular: true, render: (r) => formatDate(r.start_date) },
     { key: 'end_date', header: 'End Date', width: 96, tabular: true, render: (r) => formatDate(r.end_date) },
@@ -283,9 +283,10 @@ export default function CreateWO(): React.JSX.Element {
     <div className="flex h-full gap-3">
       {/* LEFT: form column (fields stacked one per row) */}
       <div className="card flex w-[360px] shrink-0 flex-col overflow-hidden p-4">
-        <div className="mb-3 flex items-start justify-between gap-2">
-          <h2 className="font-heading text-[15px] font-semibold leading-tight text-brand-700">
-            {editing ? 'Edit Work Order' : 'Enter Work Order & Invoice Details'}
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 font-heading text-[15px] font-bold uppercase tracking-wide leading-tight text-brand-700">
+            <FilePlus2 className="h-5 w-5 shrink-0" />
+            {editing ? 'Edit Work Order' : 'Create Invoice'}
           </h2>
           <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-50 px-2.5 py-1 font-heading text-[13px] font-semibold text-brand-700">
             <CalendarDays className="h-3.5 w-3.5" /> FY {finYear}
@@ -375,12 +376,15 @@ export default function CreateWO(): React.JSX.Element {
       {/* RIGHT: toolbar + table + totals */}
       <div className="flex min-w-0 flex-1 flex-col gap-2.5">
         <div className="flex flex-wrap items-center gap-2">
-          <input
-            className="input w-52"
-            placeholder="Search…  (comma = AND)"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <div className="relative w-[26rem] max-w-full">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              className="input h-10 w-full border-slate-300 bg-white pl-9 shadow-sm focus:shadow"
+              placeholder="Search......"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <DownloadMenu build={buildDownload} />
 
           <div className="ml-auto flex items-center gap-2">

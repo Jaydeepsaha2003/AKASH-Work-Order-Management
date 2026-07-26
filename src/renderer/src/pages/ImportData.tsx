@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowLeft, Upload, FileSpreadsheet, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Upload, FileSpreadsheet, Loader2, CheckCircle2, AlertTriangle, Building2 } from 'lucide-react'
+import type { Company } from '../lib/types'
 import { errText } from '../lib/format'
 
 type Mode = 'replace' | 'append'
 
-export default function ImportData({ onDone }: { onDone: () => void }): React.JSX.Element {
+export default function ImportData({
+  company,
+  onDone
+}: {
+  company: Company | null
+  onDone: () => void
+}): React.JSX.Element {
   const [mode, setMode] = useState<Mode>('replace')
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<{
@@ -16,10 +23,11 @@ export default function ImportData({ onDone }: { onDone: () => void }): React.JS
   } | null>(null)
 
   async function run(): Promise<void> {
+    const co = company?.name || 'the active company'
     if (
       mode === 'replace' &&
       !confirm(
-        'Replace all data?\n\nThis permanently deletes every existing work order and deduction in the app, then loads the ones from the Excel file. Continue?'
+        `Replace all data for ${co}?\n\nThis permanently deletes every existing work order and deduction belonging to ${co} (other companies are untouched), then loads the ones from the Excel file. Continue?`
       )
     )
       return
@@ -63,6 +71,24 @@ export default function ImportData({ onDone }: { onDone: () => void }): React.JS
             </div>
           </div>
 
+          {/* which company this import targets */}
+          <div className="mb-5 flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[12.5px] font-semibold uppercase tracking-wide text-brand-600">
+                Importing into
+              </div>
+              <div className="truncate font-heading text-[16px] font-bold text-brand-800">
+                {company?.name || 'Active company'}
+              </div>
+            </div>
+            <span className="ml-auto text-[13px] text-brand-700/80">
+              Data loads only for this company
+            </span>
+          </div>
+
           <p className="mb-5 text-[14.5px] leading-relaxed text-slate-600">
             The importer reads the <b>Data</b> sheet (work orders &amp; invoices) and the{' '}
             <b>Deduction</b> sheet (ledger entries) from the workbook, matching the original column
@@ -90,8 +116,9 @@ export default function ImportData({ onDone }: { onDone: () => void }): React.JS
             <div className="mt-4 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-[14px] text-amber-800">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
-                <b>Replace all</b> permanently deletes every existing work order and deduction in the
-                app before importing. You&apos;ll be asked to confirm.
+                <b>Replace all</b> permanently deletes every existing work order and deduction for{' '}
+                <b>{company?.name || 'this company'}</b> before importing (other companies are
+                untouched). You&apos;ll be asked to confirm.
               </span>
             </div>
           )}

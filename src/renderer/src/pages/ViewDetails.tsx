@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Filter } from 'lucide-react'
+import { Filter, CalendarRange } from 'lucide-react'
 import type { WorkOrder } from '../lib/types'
-import { DataTable, type Column } from '../components/ui'
+import { DataTable, DateInput, Select, type Column } from '../components/ui'
 import { formatAmt, formatDate, todayISO } from '../lib/format'
 import DownloadMenu from '../components/DownloadMenu'
 import type { DownloadPayload } from '../lib/download'
@@ -70,23 +70,71 @@ function toRow(r: WorkOrder): (string | number)[] {
 // numeric column indexes for subtotals: Gross(9) GST(10) Total(11) then 14..25
 const SUBTOTAL_COLS = [9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
+// "2022-23" → { from: 2022-04-01, to: 2023-03-31 }
+function fyToRange(fy: string): { from: string; to: string } | null {
+  const m = fy.match(/^(\d{4})-\d{2}$/)
+  if (!m) return null
+  const sy = parseInt(m[1], 10)
+  return { from: `${sy}-04-01`, to: `${sy + 1}-03-31` }
+}
+
 export default function ViewDetails(): React.JSX.Element {
   const [rows, setRows] = useState<WorkOrder[]>([])
   const [search, setSearch] = useState('')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const [fyValue, setFyValue] = useState('')
 
   useEffect(() => {
     window.api.wo.list().then(setRows)
   }, [])
 
+  // financial years present in the data (newest first)
+  const availableFYs = useMemo(() => {
+    const set = new Set<string>()
+    for (const r of rows) if (r.fin_year) set.add(r.fin_year)
+    return [...set].sort((a, b) => b.localeCompare(a))
+  }, [rows])
+
+  function pickFY(fy: string): void {
+    setFyValue(fy)
+    const r = fyToRange(fy)
+    if (r) {
+      setFrom(r.from)
+      setTo(r.to)
+    }
+  }
+  function setRangeFrom(v: string): void {
+    setFrom(v)
+    setFyValue('')
+  }
+  function setRangeTo(v: string): void {
+    setTo(v)
+    setFyValue('')
+  }
+  function clearFilters(): void {
+    setFrom('')
+    setTo('')
+    setFyValue('')
+  }
+
   const filtered = useMemo(() => {
+    // date range by invoice date
+    let base = rows
+    if (from || to) {
+      base = base.filter((r) => {
+        const d = r.invoice_date || ''
+        if (from && d < from) return false
+        if (to && d > to) return false
+        return true
+      })
+    }
     const terms = search.toLowerCase().replace(/\s/g, '').split(',').filter(Boolean)
-    if (!terms.length) return rows
-    return rows.filter((r) =>
-      terms.every((t) =>
-        toRow(r).join(' ').toLowerCase().replace(/\s/g, '').includes(t)
-      )
+    if (!terms.length) return base
+    return base.filter((r) =>
+      terms.every((t) => toRow(r).join(' ').toLowerCase().replace(/\s/g, '').includes(t))
     )
-  }, [rows, search])
+  }, [rows, search, from, to])
 
   const totals = useMemo(() => {
     let sd = 0,
@@ -156,19 +204,48 @@ export default function ViewDetails(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <Filter className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+      <div className="flex items-center gap-2">
+        <div className="relative w-52 shrink-0">
+          <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
-            className="input w-72 pl-9"
-            placeholder="Search everything…  (comma = AND)"
+            className="input h-10 w-full border-slate-300 bg-white pl-9 shadow-sm focus:shadow"
+            placeholder="Search ...."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <DownloadMenu build={buildFull} label="Download Full" />
         <DownloadMenu build={buildDeductions} label="Deduction Only" variant="ghost" />
-        <div className="ml-auto text-[16px] text-slate-500">
+
+        <div className="mx-1 h-6 w-px shrink-0 bg-slate-200" />
+
+        <CalendarRange className="h-4 w-4 shrink-0 text-brand-600" />
+        <span className="shrink-0 text-[13px] font-semibold text-slate-500">FY</span>
+        <div className="w-40 shrink-0">
+          <Select
+            value={fyValue}
+            onChange={pickFY}
+            options={availableFYs.map((f) => ({ value: f, label: `FY ${f}` }))}
+            placeholder="All"
+          />
+        </div>
+        <div className="w-32 shrink-0">
+          <DateInput iso={from} onISO={setRangeFrom} />
+        </div>
+        <span className="shrink-0 text-slate-300">–</span>
+        <div className="w-32 shrink-0">
+          <DateInput iso={to} onISO={setRangeTo} />
+        </div>
+        {(from || to || fyValue) && (
+          <button
+            onClick={clearFilters}
+            className="shrink-0 rounded-lg px-2 py-1 text-[13px] font-semibold text-slate-400 hover:bg-slate-100 hover:text-brand-600"
+          >
+            Clear
+          </button>
+        )}
+
+        <div className="ml-auto shrink-0 rounded-lg bg-brand-50 px-3 py-1.5 text-[15px] font-semibold text-brand-700">
           {filtered.length} record{filtered.length === 1 ? '' : 's'}
         </div>
       </div>

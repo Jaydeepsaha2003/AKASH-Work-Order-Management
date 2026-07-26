@@ -16,6 +16,8 @@ import type { Page } from '../lib/types'
 export interface NavItem {
   key: Page
   label: string
+  // Optional shorter label for the sidebar menu (falls back to `label`)
+  menuLabel?: string
   subtitle: string
   icon: React.ComponentType<{ className?: string }>
 }
@@ -27,7 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'invoice', label: 'Update Invoice', subtitle: 'Record receipts & deductions', icon: ReceiptText },
   { key: 'view', label: 'View Details', subtitle: 'Full register & reports', icon: Table2 },
   { key: 'deduction', label: 'Manage Deduction', subtitle: 'SD / HSE / PRS ledger', icon: Scale },
-  { key: 'outstanding', label: 'WO Outstanding', subtitle: 'Recoverable balances', icon: Wallet },
+  { key: 'outstanding', label: 'SD/HSE/PRS Outstanding', menuLabel: 'Outstanding', subtitle: 'Recoverable balances', icon: Wallet },
   { key: 'activity', label: 'Activity Log', subtitle: 'Everything that changed', icon: History }
 ]
 

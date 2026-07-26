@@ -72,24 +72,31 @@ export default function WoOutstanding(): React.JSX.Element {
         </div>
 
         <div className="card min-h-0 flex-1 overflow-auto p-0">
-          <table className="w-full" style={{ minWidth: 780 }}>
+          <table className="w-full border-collapse" style={{ minWidth: 780 }}>
             <thead className="sticky top-0 z-10">
-              <tr className="bg-slate-50 text-left text-[13px] uppercase tracking-wide text-slate-500">
+              <tr className="app-gradient text-left text-[13px] uppercase tracking-wide text-white">
                 <th className="w-10 px-3 py-3"></th>
                 <th className="px-4 py-3 font-heading font-semibold">Work Order</th>
                 <th className="px-4 py-3 font-heading font-semibold">Name of WO</th>
-                <th className="px-4 py-3 text-right font-heading font-semibold">SD Balance</th>
-                <th className="px-4 py-3 text-right font-heading font-semibold">HSE Balance</th>
-                <th className="px-4 py-3 text-right font-heading font-semibold">PRS Balance</th>
+                <th className="px-4 py-3 text-right font-heading font-semibold">
+                  <HeadDot color="bg-rose-400">SD Balance</HeadDot>
+                </th>
+                <th className="px-4 py-3 text-right font-heading font-semibold">
+                  <HeadDot color="bg-fuchsia-300">HSE Balance</HeadDot>
+                </th>
+                <th className="px-4 py-3 text-right font-heading font-semibold">
+                  <HeadDot color="bg-teal-300">PRS Balance</HeadDot>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => {
+              {filtered.map((r, i) => {
                 const open = expanded === r.work_order_no
                 return (
                   <ExpandableRow
                     key={r.work_order_no}
                     r={r}
+                    i={i}
                     open={open}
                     onToggle={() =>
                       setExpanded((cur) => (cur === r.work_order_no ? null : r.work_order_no))
@@ -124,24 +131,55 @@ export default function WoOutstanding(): React.JSX.Element {
   )
 }
 
+function HeadDot({ color, children }: { color: string; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <span className="inline-flex items-center justify-end gap-1.5">
+      <span className={`h-2 w-2 rounded-full ${color}`} />
+      {children}
+    </span>
+  )
+}
+
+// Colored pill for a non-zero balance; muted for zero; red for negative.
+function BalancePill({ v, accent }: { v: number; accent: 'rose' | 'brand' | 'teal' }): React.JSX.Element {
+  const rounded = Math.round(v * 100) / 100
+  if (rounded === 0) return <span className="tabular text-[15.5px] text-slate-300">0.00</span>
+  if (rounded < 0)
+    return (
+      <span className="tabular inline-block rounded-md bg-rose-50 px-2 py-0.5 text-[15.5px] font-semibold text-rose-600">
+        {formatAmt(v)}
+      </span>
+    )
+  const tint = {
+    rose: 'bg-rose-50 text-rose-700',
+    brand: 'bg-brand-50 text-brand-700',
+    teal: 'bg-teal-50 text-teal-700'
+  }[accent]
+  return (
+    <span className={`tabular inline-block rounded-md px-2 py-0.5 text-[15.5px] font-semibold ${tint}`}>
+      {formatAmt(v)}
+    </span>
+  )
+}
+
 function ExpandableRow({
   r,
+  i,
   open,
   onToggle
 }: {
   r: OutstandingRow
+  i: number
   open: boolean
   onToggle: () => void
 }): React.JSX.Element {
-  const bal = (v: number): React.JSX.Element => (
-    <span className={v < 0 ? 'text-rose-600' : 'text-slate-800'}>{formatAmt(v)}</span>
-  )
+  const stripe = i % 2 ? 'bg-brand-50/40' : 'bg-white'
   return (
     <>
       <tr
         onClick={onToggle}
-        className={`cursor-pointer border-t border-slate-100 transition hover:bg-brand-50/50 ${
-          open ? 'bg-brand-50/60' : ''
+        className={`cursor-pointer border-t border-slate-100 transition hover:bg-brand-50 ${
+          open ? 'bg-brand-100/70' : stripe
         }`}
       >
         <td className="px-3 py-3 text-slate-400">
@@ -155,14 +193,14 @@ function ExpandableRow({
         <td className="max-w-[280px] truncate px-4 py-3 text-[15.5px] font-medium text-slate-600">
           {r.wo_name || '—'}
         </td>
-        <td className="tabular px-4 py-3 text-right text-[15.5px] font-semibold">
-          {bal(r.sd_balance)}
+        <td className="px-4 py-3 text-right">
+          <BalancePill v={r.sd_balance} accent="rose" />
         </td>
-        <td className="tabular px-4 py-3 text-right text-[15.5px] font-semibold">
-          {bal(r.hse_balance)}
+        <td className="px-4 py-3 text-right">
+          <BalancePill v={r.hse_balance} accent="brand" />
         </td>
-        <td className="tabular px-4 py-3 text-right text-[15.5px] font-semibold">
-          {bal(r.prs_balance)}
+        <td className="px-4 py-3 text-right">
+          <BalancePill v={r.prs_balance} accent="teal" />
         </td>
       </tr>
       {open && (

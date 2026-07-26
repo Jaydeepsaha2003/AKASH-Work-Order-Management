@@ -167,7 +167,7 @@ export default function Sidebar({
               <button
                 key={item.key}
                 onClick={() => onNavigate(item.key)}
-                title={item.label}
+                title={item.menuLabel ?? item.label}
                 className={cn(
                   'group flex w-full items-center gap-3 rounded-xl py-2.5 text-left transition',
                   expanded ? 'px-3' : 'justify-center px-0',
@@ -187,7 +187,7 @@ export default function Sidebar({
                 {expanded && (
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-heading text-[15px] font-semibold text-white">
-                      {item.label}
+                      {item.menuLabel ?? item.label}
                     </span>
                     <span
                       className={cn(
