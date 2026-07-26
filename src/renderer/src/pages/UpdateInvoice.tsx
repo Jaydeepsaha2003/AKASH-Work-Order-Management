@@ -150,144 +150,139 @@ export default function UpdateInvoice(): React.JSX.Element {
   ]
 
   return (
-    <div className="flex h-full gap-3">
-      {/* LEFT: form column (fields stacked one per row) */}
-      <div className="card flex w-[380px] shrink-0 flex-col overflow-hidden p-4">
-        <div className="mb-3">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 font-heading text-[15px] font-bold uppercase tracking-wide leading-tight text-brand-700">
-              <ReceiptText className="h-5 w-5 shrink-0" />
-              {isEditingReceived ? 'Edit Received Invoice' : 'Enter Deductions'}
-            </h2>
-          </div>
+    <div className="flex h-full flex-col gap-3">
+      {/* toolbar */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-72">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            className="input h-10 w-full border-slate-300 bg-white pl-9 shadow-sm focus:shadow"
+            placeholder="Search work orders......"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-[15px] font-semibold text-slate-600">
+          <input
+            type="checkbox"
+            checked={editMode}
+            onChange={(e) => {
+              setEditMode(e.target.checked)
+              clear()
+            }}
+            className="h-4 w-4 accent-brand-600"
+          />
+          Edit Mode (edit received invoices)
+        </label>
+        <div className="flex items-center gap-1.5 text-[15px] text-slate-400">
+          <MousePointerClick className="h-4 w-4" /> Click <b className="text-brand-600">Load</b> on a
+          row to open it
+        </div>
+      </div>
+
+      {/* TOP: work-order table */}
+      <div className="min-h-0 flex-1">
+        <DataTable
+          columns={columns}
+          rows={filtered}
+          minWidth={900}
+          defaultSortKey="invoice_no"
+          selectedIndex={sel}
+          onSelect={(i) => setSel(i)}
+          actionsHeader="Action"
+          rowActions={(r) => (
+            <button
+              title="Load for invoice entry"
+              onClick={() => pick(r)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-brand-700 active:scale-95"
+            >
+              <FilePlus2 className="h-4 w-4" /> Load
+            </button>
+          )}
+        />
+      </div>
+
+      {/* BOTTOM: input controls */}
+      <div className="card shrink-0 overflow-auto p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 font-heading text-[15px] font-bold uppercase tracking-wide leading-tight text-brand-700">
+            <ReceiptText className="h-5 w-5 shrink-0" />
+            {isEditingReceived ? 'Edit Received Invoice' : 'Update Invoice'}
+          </h2>
           {picked && (
-            <div className="mt-2 rounded-lg bg-brand-50 px-3 py-1.5 font-heading text-[12.5px] font-semibold text-brand-700">
+            <div className="rounded-lg bg-brand-50 px-3 py-1.5 font-heading text-[13px] font-semibold text-brand-700">
               WO {picked.work_order_no} • Inv {picked.invoice_no} • FY{' '}
               {financialYear(picked.rec_date ? new Date(picked.rec_date) : new Date())}
             </div>
           )}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto pr-1">
-          <div className="grid grid-cols-1 gap-2">
-            <Field label="Work Order No">
-              <TextInput readOnlyLook readOnly className="tabular" value={picked?.work_order_no || ''} />
-            </Field>
-            <Field label="Received Date">
-              <DateInput iso={recDate} onISO={setRecDate} />
-            </Field>
-            <Field label="GST Amt (2%)">
-              <NumberInput value={ded.gst_2} onValue={(v) => setDed({ ...ded, gst_2: v })} />
-            </Field>
-            <Field label="Penalty / Water & Elec">
-              <NumberInput value={ded.penalty} onValue={(v) => setDed({ ...ded, penalty: v })} />
-            </Field>
-            <Field label="E. Cem Bags & Others">
-              <NumberInput value={ded.cem_bags} onValue={(v) => setDed({ ...ded, cem_bags: v })} />
-            </Field>
-            <Field label="Land Rent">
-              <NumberInput value={ded.land_rent} onValue={(v) => setDed({ ...ded, land_rent: v })} />
-            </Field>
-            <Field label="Income Tax">
-              <NumberInput value={ded.income_tax} onValue={(v) => setDed({ ...ded, income_tax: v })} />
-            </Field>
-            <Field label="Labour Cess">
-              <NumberInput value={ded.labour_cess} onValue={(v) => setDed({ ...ded, labour_cess: v })} />
-            </Field>
-            <Field label="GST (Rent & Penalty)">
-              <NumberInput
-                value={ded.gst_rent_penalty}
-                onValue={(v) => setDed({ ...ded, gst_rent_penalty: v })}
-              />
-            </Field>
-            <Field label="WithHold / HSE">
-              <NumberInput value={ded.hse} onValue={(v) => setDed({ ...ded, hse: v })} />
-            </Field>
-            <Field label="SD Amt">
-              <NumberInput value={ded.sd_amt} onValue={(v) => setDed({ ...ded, sd_amt: v })} />
-            </Field>
-            <Field label="Price Deduct (PRS)">
-              <NumberInput
-                value={ded.price_deduction}
-                onValue={(v) => setDed({ ...ded, price_deduction: v })}
-              />
-            </Field>
-            <Field label="Round Off">
-              <NumberInput value={ded.round_off} onValue={(v) => setDed({ ...ded, round_off: v })} />
-            </Field>
-            <Field label="Gross Amt (Total)">
-              <TextInput readOnlyLook readOnly className="tabular text-right" value={formatAmt(total)} />
-            </Field>
-            <Field label="Net Amount">
-              <TextInput
-                readOnlyLook
-                readOnly
-                className="tabular text-right font-bold text-emerald-700"
-                value={formatAmt(netAmount)}
-              />
-            </Field>
-          </div>
+        <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-5">
+          <Field label="Work Order No">
+            <TextInput readOnlyLook readOnly className="tabular" value={picked?.work_order_no || ''} />
+          </Field>
+          <Field label="Received Date">
+            <DateInput iso={recDate} onISO={setRecDate} />
+          </Field>
+          <Field label="GST Amt (2%)">
+            <NumberInput value={ded.gst_2} onValue={(v) => setDed({ ...ded, gst_2: v })} />
+          </Field>
+          <Field label="Income Tax">
+            <NumberInput value={ded.income_tax} onValue={(v) => setDed({ ...ded, income_tax: v })} />
+          </Field>
+          <Field label="Land Rent">
+            <NumberInput value={ded.land_rent} onValue={(v) => setDed({ ...ded, land_rent: v })} />
+          </Field>
+          <Field label="GST (Rent & Penalty)">
+            <NumberInput
+              value={ded.gst_rent_penalty}
+              onValue={(v) => setDed({ ...ded, gst_rent_penalty: v })}
+            />
+          </Field>
+          <Field label="WithHold / HSE">
+            <NumberInput value={ded.hse} onValue={(v) => setDed({ ...ded, hse: v })} />
+          </Field>
+          <Field label="Price Deduct (PRS)">
+            <NumberInput
+              value={ded.price_deduction}
+              onValue={(v) => setDed({ ...ded, price_deduction: v })}
+            />
+          </Field>
+          <Field label="SD Amt">
+            <NumberInput value={ded.sd_amt} onValue={(v) => setDed({ ...ded, sd_amt: v })} />
+          </Field>
+          <Field label="Penalty / Water & Elec">
+            <NumberInput value={ded.penalty} onValue={(v) => setDed({ ...ded, penalty: v })} />
+          </Field>
+          <Field label="E. Cem Bags & Others">
+            <NumberInput value={ded.cem_bags} onValue={(v) => setDed({ ...ded, cem_bags: v })} />
+          </Field>
+          <Field label="Labour Cess">
+            <NumberInput value={ded.labour_cess} onValue={(v) => setDed({ ...ded, labour_cess: v })} />
+          </Field>
+          <Field label="Round Off">
+            <NumberInput value={ded.round_off} onValue={(v) => setDed({ ...ded, round_off: v })} />
+          </Field>
+          <Field label="Gross Amt (Total)">
+            <TextInput readOnlyLook readOnly className="tabular text-right" value={formatAmt(total)} />
+          </Field>
+          <Field label="Net Amount">
+            <TextInput
+              readOnlyLook
+              readOnly
+              className="tabular text-right font-bold text-emerald-700"
+              value={formatAmt(netAmount)}
+            />
+          </Field>
         </div>
 
         <div className="mt-3 flex gap-2">
-          <button className="btn-green flex-1" onClick={save}>
+          <button className="btn-green" onClick={save}>
             <Save className="h-4 w-4" /> {isEditingReceived ? 'Update' : 'Save'}
           </button>
-          <button className="btn-red flex-1" onClick={clear}>
+          <button className="btn-red" onClick={clear}>
             <Eraser className="h-4 w-4" /> Clear
           </button>
-        </div>
-      </div>
-
-      {/* RIGHT: toolbar + table */}
-      <div className="flex min-w-0 flex-1 flex-col gap-2.5">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative w-72">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              className="input h-10 w-full border-slate-300 bg-white pl-9 shadow-sm focus:shadow"
-              placeholder="Search work orders......"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-[15px] font-semibold text-slate-600">
-            <input
-              type="checkbox"
-              checked={editMode}
-              onChange={(e) => {
-                setEditMode(e.target.checked)
-                clear()
-              }}
-              className="h-4 w-4 accent-brand-600"
-            />
-            Edit Mode (edit received invoices)
-          </label>
-          <div className="flex items-center gap-1.5 text-[15px] text-slate-400">
-            <MousePointerClick className="h-4 w-4" /> Click <b className="text-brand-600">Load</b> on a
-            row to open it
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1">
-          <DataTable
-            columns={columns}
-            rows={filtered}
-            minWidth={900}
-            defaultSortKey="invoice_no"
-            selectedIndex={sel}
-            onSelect={(i) => setSel(i)}
-            actionsHeader="Action"
-            rowActions={(r) => (
-              <button
-                title="Load for invoice entry"
-                onClick={() => pick(r)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-brand-700 active:scale-95"
-              >
-                <FilePlus2 className="h-4 w-4" /> Load
-              </button>
-            )}
-          />
         </div>
       </div>
     </div>

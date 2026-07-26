@@ -54,10 +54,10 @@ button {
     background: linear-gradient(180deg, #1c1636 0%, #0d0a1a 100%);
   }
   .card {
-    @apply rounded-2xl border border-[var(--border)] bg-white shadow-card;
+    @apply rounded-2xl border border-[var(--border)] bg-[#e7e4f2] shadow-card;
   }
   .field-label {
-    @apply text-[13.5px] font-semibold text-slate-600;
+    @apply text-[13.5px] font-semibold text-slate-900;
   }
   .input {
     @apply h-9 w-full rounded-lg border border-slate-400 bg-white px-2.5 text-[16px] font-medium

@@ -251,7 +251,7 @@ export default function Dashboard({
         </div>
 
         {/* Date range filter */}
-        <div className="card flex flex-wrap items-center gap-x-6 gap-y-4 p-4">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-2xl border border-white/70 bg-gradient-to-br from-white to-[#eeecf8] p-4 shadow-card">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
               <CalendarRange className="h-5 w-5" />
@@ -474,8 +474,8 @@ function Kpi({
   tint: string
 }): React.JSX.Element {
   return (
-    <div className="card relative overflow-hidden p-4">
-      <div className={`absolute right-0 top-0 h-20 w-20 bg-gradient-to-br ${tint} opacity-10 blur-xl`} />
+    <div className="relative overflow-hidden rounded-2xl border border-white/70 bg-gradient-to-br from-white to-[#eeecf8] p-4 shadow-card">
+      <div className={`absolute right-0 top-0 h-24 w-24 bg-gradient-to-br ${tint} opacity-20 blur-2xl`} />
       <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${tint} text-white shadow-sm`}>
         <Icon className="h-5 w-5" />
       </div>
@@ -520,7 +520,7 @@ function Panel({
   right?: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div className={`card p-4 ${className ?? ''}`}>
+    <div className={`rounded-2xl border border-white/70 bg-gradient-to-br from-white to-[#eeecf8] p-4 shadow-card ${className ?? ''}`}>
       <div className="mb-4 flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
           <Icon className="h-4.5 w-4.5" />

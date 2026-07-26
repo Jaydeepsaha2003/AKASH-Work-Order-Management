@@ -174,11 +174,6 @@ export default function ManageDeduction(): React.JSX.Element {
     }
   }
 
-  async function remove(): Promise<void> {
-    if (sel < 0) return fail('Please select a valid row to delete.')
-    await removeRow(filtered[sel])
-  }
-
   function buildDownload(): DownloadPayload {
     return {
       title: 'Deduction Ledger',
@@ -253,9 +248,60 @@ export default function ManageDeduction(): React.JSX.Element {
   ]
 
   return (
-    <div className="flex h-full gap-3">
-      {/* LEFT: form column (fields stacked one per row) */}
-      <div className="card flex w-[380px] shrink-0 flex-col overflow-hidden p-4">
+    <div className="flex h-full flex-col gap-3">
+      {/* toolbar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-72">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            className="input h-10 w-full border-slate-300 bg-white pl-9 shadow-sm focus:shadow"
+            placeholder="Search deductions......"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <DownloadMenu build={buildDownload} />
+      </div>
+
+      {/* TOP: ledger table */}
+      <div className="min-h-0 flex-1">
+        <DataTable
+          columns={columns}
+          rows={filtered}
+          minWidth={1500}
+          defaultSortKey="invoice_no"
+          selectedIndex={sel}
+          onSelect={(i) => setSel(i)}
+          rowActions={(r) => (
+            <div className="flex items-center justify-center gap-1">
+              <button
+                title="Edit"
+                onClick={() => loadRow(r)}
+                className="flex h-6 w-6 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button
+                title="Delete"
+                onClick={() => removeRow(r)}
+                className="flex h-6 w-6 items-center justify-center rounded-md text-rose-600 transition hover:bg-rose-100"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        />
+      </div>
+
+      {/* totals */}
+      <div className="grid grid-cols-3 gap-3">
+        <BalBar label="SD" dr={totals.sdDr} cr={totals.sdCr} />
+        <BalBar label="HSE" dr={totals.hseDr} cr={totals.hseCr} />
+        <BalBar label="PRS" dr={totals.prsDr} cr={totals.prsCr} />
+      </div>
+
+      {/* BOTTOM: input controls */}
+      <div className="card shrink-0 overflow-auto p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 font-heading text-[15px] font-bold uppercase tracking-wide leading-tight text-brand-700">
             <Scale className="h-5 w-5 shrink-0" />
@@ -266,128 +312,71 @@ export default function ManageDeduction(): React.JSX.Element {
           </span>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto pr-1">
-          <div className="grid grid-cols-1 gap-2">
-            <Field label="Work Order No">
-              <ComboBox
-                value={form.work_order_no}
-                onChange={pickWo}
-                options={names.map((n) => n.work_order_no)}
-              />
-            </Field>
-            <Field label="Invoice No">
-              <TextInput className="tabular" value={form.invoice_no} onChange={(e) => set('invoice_no', e.target.value)} />
-            </Field>
-            <Field label="Deduction Date">
-              <DateInput iso={form.deduct_date} onISO={(v) => set('deduct_date', v)} />
-            </Field>
-            <Field label="Deduc Rec Date">
-              <DateInput iso={form.rec_date} onISO={(v) => set('rec_date', v)} />
-            </Field>
-            <Field label="Create Status">
-              <Select
-                value={form.create_status}
-                onChange={(v) => set('create_status', v)}
-                options={[
-                  { value: 'Manual', label: 'Manual' },
-                  { value: 'Auto-Generate', label: 'Auto-Generate' }
-                ]}
-              />
-            </Field>
-            <Field label="Name of Work">
-              <TextInput className="tabular" value={form.wo_name} onChange={(e) => set('wo_name', e.target.value)} />
-            </Field>
-            <Field label="Dr. SD Amt">
-              <NumberInput value={form.sd_debit} onValue={(v) => set('sd_debit', v)} />
-            </Field>
-            <Field label="Cr. SD Amt">
-              <NumberInput value={form.sd_credit} onValue={(v) => set('sd_credit', v)} />
-            </Field>
-            <Field label="Dr. PRS Amt">
-              <NumberInput value={form.prs_debit} onValue={(v) => set('prs_debit', v)} />
-            </Field>
-            <Field label="Cr. PRS Amt">
-              <NumberInput value={form.prs_credit} onValue={(v) => set('prs_credit', v)} />
-            </Field>
-            <Field label="Dr. HSE Amt">
-              <NumberInput value={form.hse_debit} onValue={(v) => set('hse_debit', v)} />
-            </Field>
-            <Field label="Cr. HSE Amt">
-              <NumberInput value={form.hse_credit} onValue={(v) => set('hse_credit', v)} />
-            </Field>
-            <Field label="Description">
-              <TextInput value={form.description} onChange={(e) => set('description', e.target.value)} />
-            </Field>
-          </div>
-        </div>
-
-        <div className="mt-3 flex gap-2">
-          {editId ? (
-            <button className="btn-primary flex-1" onClick={update}>
-              <RefreshCw className="h-4 w-4" /> Update
-            </button>
-          ) : (
-            <button className="btn-green flex-1" onClick={save}>
-              <Save className="h-4 w-4" /> Save
-            </button>
-          )}
-          <button className="btn-red flex-1" onClick={clear}>
-            <Eraser className="h-4 w-4" /> Clear
-          </button>
-        </div>
-      </div>
-
-      {/* RIGHT: toolbar + table + totals */}
-      <div className="flex min-w-0 flex-1 flex-col gap-2.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative w-72">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              className="input h-10 w-full border-slate-300 bg-white pl-9 shadow-sm focus:shadow"
-              placeholder="Search deductions......"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+        <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-6">
+          <Field label="Work Order No">
+            <ComboBox
+              value={form.work_order_no}
+              onChange={pickWo}
+              options={names.map((n) => n.work_order_no)}
             />
-          </div>
-          <DownloadMenu build={buildDownload} />
-          <button className="btn-red ml-auto" onClick={remove}>
-            <Trash2 className="h-4 w-4" /> Delete Deduc Entry
-          </button>
-        </div>
-
-        <div className="min-h-0 flex-1">
-          <DataTable
-            columns={columns}
-            rows={filtered}
-            minWidth={1500}
-            defaultSortKey="invoice_no"
-            selectedIndex={sel}
-            onSelect={(i) => setSel(i)}
-            rowActions={(r) => (
-              <div className="flex items-center justify-center gap-1">
-                <button
-                  title="Edit"
-                  onClick={() => loadRow(r)}
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button
-                  title="Delete"
-                  onClick={() => removeRow(r)}
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-rose-600 transition hover:bg-rose-100"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
+          </Field>
+          <Field label="Invoice No">
+            <TextInput className="tabular" value={form.invoice_no} onChange={(e) => set('invoice_no', e.target.value)} />
+          </Field>
+          <Field label="Deduction Date">
+            <DateInput iso={form.deduct_date} onISO={(v) => set('deduct_date', v)} />
+          </Field>
+          <Field label="Deduc Rec Date">
+            <DateInput iso={form.rec_date} onISO={(v) => set('rec_date', v)} />
+          </Field>
+          <Field label="Create Status">
+            <Select
+              value={form.create_status}
+              onChange={(v) => set('create_status', v)}
+              options={[
+                { value: 'Manual', label: 'Manual' },
+                { value: 'Auto-Generate', label: 'Auto-Generate' }
+              ]}
+            />
+          </Field>
+          <Field label="Name of Work">
+            <TextInput className="tabular" value={form.wo_name} onChange={(e) => set('wo_name', e.target.value)} />
+          </Field>
+          <Field label="Dr. SD Amt">
+            <NumberInput value={form.sd_debit} onValue={(v) => set('sd_debit', v)} />
+          </Field>
+          <Field label="Cr. SD Amt">
+            <NumberInput value={form.sd_credit} onValue={(v) => set('sd_credit', v)} />
+          </Field>
+          <Field label="Dr. PRS Amt">
+            <NumberInput value={form.prs_debit} onValue={(v) => set('prs_debit', v)} />
+          </Field>
+          <Field label="Cr. PRS Amt">
+            <NumberInput value={form.prs_credit} onValue={(v) => set('prs_credit', v)} />
+          </Field>
+          <Field label="Dr. HSE Amt">
+            <NumberInput value={form.hse_debit} onValue={(v) => set('hse_debit', v)} />
+          </Field>
+          <Field label="Cr. HSE Amt">
+            <NumberInput value={form.hse_credit} onValue={(v) => set('hse_credit', v)} />
+          </Field>
+          <Field label="Description" className="sm:col-span-2 lg:col-span-4">
+            <TextInput value={form.description} onChange={(e) => set('description', e.target.value)} />
+          </Field>
+          <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
+            {editId ? (
+              <button className="btn-primary flex-1" onClick={update}>
+                <RefreshCw className="h-4 w-4" /> Update
+              </button>
+            ) : (
+              <button className="btn-green flex-1" onClick={save}>
+                <Save className="h-4 w-4" /> Save
+              </button>
             )}
-          />
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <BalBar label="SD" dr={totals.sdDr} cr={totals.sdCr} />
-          <BalBar label="HSE" dr={totals.hseDr} cr={totals.hseCr} />
-          <BalBar label="PRS" dr={totals.prsDr} cr={totals.prsCr} />
+            <button className="btn-red flex-1" onClick={clear}>
+              <Eraser className="h-4 w-4" /> Clear
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -399,9 +388,12 @@ function BalBar({ label, dr, cr }: { label: string; dr: number; cr: number }): R
     <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-card">
       <span className="font-heading text-[16px] font-bold text-brand-700">{label} Total</span>
       <div className="flex gap-4 text-[14px] tabular">
-        <span className="text-slate-500">Dr <b className="text-slate-700">{formatAmt(dr)}</b></span>
-        <span className="text-slate-500">Cr <b className="text-slate-700">{formatAmt(cr)}</b></span>
-        <span className="text-slate-500">Bal <b className="text-emerald-700">{formatAmt(dr - cr)}</b></span>
+        <span className="text-slate-500">Dr <b className="text-rose-600">{formatAmt(dr)}</b></span>
+        <span className="text-slate-500">Cr <b className="text-emerald-600">{formatAmt(cr)}</b></span>
+        <span className="text-slate-500">
+          Bal{' '}
+          <b className={dr - cr < 0 ? 'text-rose-600' : 'text-emerald-700'}>{formatAmt(dr - cr)}</b>
+        </span>
       </div>
     </div>
   )
