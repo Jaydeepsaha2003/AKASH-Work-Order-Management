@@ -418,7 +418,9 @@ export function DataTable<T>({
   onRowDoubleClick,
   emptyText = 'No records',
   rowActions,
-  actionsHeader = 'Actions'
+  actionsHeader = 'Actions',
+  defaultSortKey,
+  defaultSortDir = 'asc'
 }: {
   columns: Column<T>[]
   rows: T[]
@@ -430,12 +432,15 @@ export function DataTable<T>({
   // when provided, a pinned (always-visible) right column of per-row actions is shown
   rowActions?: (row: T, i: number) => React.ReactNode
   actionsHeader?: string
+  // initial sort column (e.g. 'invoice_no'); users can still click to re-sort
+  defaultSortKey?: string
+  defaultSortDir?: 'asc' | 'desc'
 }): React.JSX.Element {
   const rowBg = (i: number): string =>
     selectedIndex === i ? 'bg-brand-100' : i % 2 ? 'bg-brand-50' : 'bg-white'
 
-  const [sortKey, setSortKey] = useState<string | null>(null)
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [sortKey, setSortKey] = useState<string | null>(defaultSortKey ?? null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(defaultSortDir)
 
   const toggleSort = (key: string): void => {
     if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
@@ -477,7 +482,7 @@ export function DataTable<T>({
                   key={c.key}
                   onClick={() => toggleSort(c.key)}
                   title="Click to sort"
-                  className="cursor-pointer select-none whitespace-nowrap px-3 py-2.5 font-heading text-[13.5px] font-semibold transition hover:bg-white/10"
+                  className="cursor-pointer select-none whitespace-nowrap border-l border-white/15 px-3 py-2.5 font-heading text-[13.5px] font-semibold transition first:border-l-0 hover:bg-white/10"
                   style={{ width: c.width, textAlign: c.align ?? (c.numeric ? 'right' : 'left') }}
                 >
                   <span
@@ -523,13 +528,13 @@ export function DataTable<T>({
               key={i}
               onClick={() => onSelect?.(i, row)}
               onDoubleClick={() => onRowDoubleClick?.(i, row)}
-              className={cn('group cursor-pointer border-b border-slate-100 transition', rowBg(i))}
+              className={cn('group cursor-pointer border-b border-slate-200 transition', rowBg(i))}
             >
               {columns.map((c) => (
                 <td
                   key={c.key}
                   className={cn(
-                    'whitespace-nowrap px-3 py-1.5 text-slate-700 transition-colors group-hover:bg-brand-50/60',
+                    'whitespace-nowrap border-l border-slate-200 px-3 py-1.5 text-slate-700 transition-colors first:border-l-0 group-hover:bg-brand-50/60',
                     c.light ? 'font-medium' : 'font-semibold',
                     (c.numeric || c.tabular) && 'tabular'
                   )}
@@ -541,7 +546,7 @@ export function DataTable<T>({
               {rowActions && (
                 <td
                   className={cn(
-                    'sticky right-0 z-10 whitespace-nowrap px-2 py-0.5 text-center',
+                    'sticky right-0 z-10 whitespace-nowrap border-l border-slate-200 px-2 py-0.5 text-center',
                     rowBg(i),
                     'group-hover:bg-brand-50',
                     'shadow-[-8px_0_10px_-8px_rgba(0,0,0,0.18)]'

@@ -7,7 +7,14 @@ const num = (v: unknown): number => {
   return isNaN(n) ? 0 : n
 }
 
-function upsertWoList(cid: number, work_order_no: string, wo_name: string | null): void {
+// Keep the Name of WO consistent everywhere for a given work order number:
+// the canonical list, plus every work-order row and deduction row that shares it.
+export function syncWoName(
+  cid: number,
+  work_order_no: string,
+  wo_name: string | null
+): void {
+  if (!work_order_no) return
   const db = getDb()
   const existing = db
     .prepare('SELECT wo_name FROM work_order_list WHERE company_id = ? AND work_order_no = ?')
@@ -20,6 +27,15 @@ function upsertWoList(cid: number, work_order_no: string, wo_name: string | null
     db.prepare(
       'UPDATE work_order_list SET wo_name = ? WHERE company_id = ? AND work_order_no = ?'
     ).run(wo_name, cid, work_order_no)
+  }
+  // Propagate a non-empty name to every existing row of this WO so it matches everywhere.
+  if (wo_name) {
+    db.prepare(
+      'UPDATE workorders SET wo_name = ? WHERE company_id = ? AND work_order_no = ? AND (wo_name IS NULL OR wo_name <> ?)'
+    ).run(wo_name, cid, work_order_no, wo_name)
+    db.prepare(
+      'UPDATE deductions SET wo_name = ? WHERE company_id = ? AND work_order_no = ? AND (wo_name IS NULL OR wo_name <> ?)'
+    ).run(wo_name, cid, work_order_no, wo_name)
   }
 }
 
@@ -77,7 +93,7 @@ export function createWorkOrder(input: WoCreateInput): { ok: boolean; message: s
     input.wo_name
   )
 
-  upsertWoList(cid, input.work_order_no, input.wo_name)
+  syncWoName(cid, input.work_order_no, input.wo_name)
   return { ok: true, message: 'Your data has been saved successfully.' }
 }
 
@@ -110,7 +126,7 @@ export function updateWorkOrder(
     id,
     cid
   )
-  upsertWoList(cid, input.work_order_no, input.wo_name)
+  syncWoName(cid, input.work_order_no, input.wo_name)
   return { ok: true, message: 'The selected work order has been updated successfully.' }
 }
 

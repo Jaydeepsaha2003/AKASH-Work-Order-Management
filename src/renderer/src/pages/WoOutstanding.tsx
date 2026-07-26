@@ -74,7 +74,7 @@ export default function WoOutstanding(): React.JSX.Element {
         <div className="card min-h-0 flex-1 overflow-auto p-0">
           <table className="w-full border-collapse" style={{ minWidth: 780 }}>
             <thead className="sticky top-0 z-10">
-              <tr className="app-gradient text-left text-[13px] uppercase tracking-wide text-white">
+              <tr className="app-gradient text-left text-[13.5px] uppercase tracking-wide text-white">
                 <th className="w-10 px-3 py-3"></th>
                 <th className="px-4 py-3 font-heading font-semibold">Work Order</th>
                 <th className="px-4 py-3 font-heading font-semibold">Name of WO</th>
@@ -143,10 +143,10 @@ function HeadDot({ color, children }: { color: string; children: React.ReactNode
 // Colored pill for a non-zero balance; muted for zero; red for negative.
 function BalancePill({ v, accent }: { v: number; accent: 'rose' | 'brand' | 'teal' }): React.JSX.Element {
   const rounded = Math.round(v * 100) / 100
-  if (rounded === 0) return <span className="tabular text-[15.5px] text-slate-300">0.00</span>
+  if (rounded === 0) return <span className="tabular text-[16.5px] text-slate-300">0.00</span>
   if (rounded < 0)
     return (
-      <span className="tabular inline-block rounded-md bg-rose-50 px-2 py-0.5 text-[15.5px] font-semibold text-rose-600">
+      <span className="tabular inline-block rounded-md bg-rose-50 px-2 py-0.5 text-[16.5px] font-semibold text-rose-600">
         {formatAmt(v)}
       </span>
     )
@@ -156,7 +156,7 @@ function BalancePill({ v, accent }: { v: number; accent: 'rose' | 'brand' | 'tea
     teal: 'bg-teal-50 text-teal-700'
   }[accent]
   return (
-    <span className={`tabular inline-block rounded-md px-2 py-0.5 text-[15.5px] font-semibold ${tint}`}>
+    <span className={`tabular inline-block rounded-md px-2 py-0.5 text-[16.5px] font-semibold ${tint}`}>
       {formatAmt(v)}
     </span>
   )
@@ -187,10 +187,10 @@ function ExpandableRow({
             className={`h-4.5 w-4.5 transition-transform ${open ? 'rotate-90 text-brand-600' : ''}`}
           />
         </td>
-        <td className="tabular px-4 py-3 text-[15.5px] font-semibold text-slate-800">
+        <td className="tabular px-4 py-3 text-[16.5px] font-semibold text-slate-800">
           {r.work_order_no}
         </td>
-        <td className="max-w-[280px] truncate px-4 py-3 text-[15.5px] font-medium text-slate-600">
+        <td className="max-w-[280px] truncate px-4 py-3 text-[16.5px] font-semibold text-slate-700">
           {r.wo_name || '—'}
         </td>
         <td className="px-4 py-3 text-right">

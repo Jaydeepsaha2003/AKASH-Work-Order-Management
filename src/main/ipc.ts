@@ -17,7 +17,7 @@ import {
 } from './deductions'
 import { verifyLogin, changePassword } from './auth'
 import { exportToExcel, saveBinaryFile, type ExportRequest } from './exporter'
-import { importExcel } from './importexcel'
+import { importExcel, importWorkOrders } from './importexcel'
 import { backupDatabase, restoreDatabase } from './backup'
 import {
   listCompanies,
@@ -125,6 +125,9 @@ export function registerIpc(): void {
   handle('wo:create', (a) => createWorkOrder(a))
   handle('wo:update', (a) => updateWorkOrder(a.id, a))
   handle('wo:delete', (a) => deleteWorkOrder(a.id))
+  handle('wo:importExcel', (a: { mode: 'append' | 'replace' }, win) =>
+    importWorkOrders(win, a?.mode ?? 'append')
+  )
 
   // Invoices
   handle('inv:save', (a) => saveInvoice(a))

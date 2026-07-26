@@ -274,6 +274,7 @@ export default function UpdateInvoice(): React.JSX.Element {
             columns={columns}
             rows={filtered}
             minWidth={900}
+            defaultSortKey="invoice_no"
             selectedIndex={sel}
             onSelect={(i) => setSel(i)}
             actionsHeader="Action"

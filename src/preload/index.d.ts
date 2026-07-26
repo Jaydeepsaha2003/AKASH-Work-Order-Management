@@ -39,6 +39,9 @@ export interface Api {
       values: WoCreateInput & { id: number; wo_status: string; cancel_remarks: string | null }
     ) => Promise<Res>
     remove: (id: number) => Promise<Res>
+    importExcel: (
+      mode: 'append' | 'replace'
+    ) => Promise<Res & { woInserted?: number; woSkipped?: number }>
   }
   inv: {
     save: (values: InvoiceInput) => Promise<Res>

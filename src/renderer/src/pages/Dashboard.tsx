@@ -386,39 +386,53 @@ export default function Dashboard({
                 </span>
               </div>
               <div className="max-h-[380px] overflow-auto rounded-xl border border-slate-200">
-                <table className="w-full border-collapse text-[15px]" style={{ minWidth: 720 }}>
+                <table className="w-full border-collapse text-[16.5px]" style={{ minWidth: 720 }}>
                   <thead className="sticky top-0 z-10">
-                    <tr className="bg-slate-100 text-left text-[12px] uppercase tracking-wide text-slate-500">
-                      <th className="px-4 py-2.5 font-heading font-semibold">Work Order</th>
-                      <th className="px-4 py-2.5 font-heading font-semibold">Name</th>
-                      <th className="px-4 py-2.5 font-heading font-semibold">Invoice</th>
-                      <th className="px-4 py-2.5 font-heading font-semibold">Invoice Date</th>
-                      <th className="px-4 py-2.5 text-right font-heading font-semibold">Total</th>
-                      <th className="px-4 py-2.5 text-right font-heading font-semibold">Days Pending</th>
+                    <tr className="app-gradient text-left text-[13.5px] uppercase tracking-wide text-white">
+                      <th className="border-l border-white/15 px-4 py-2.5 font-heading font-semibold first:border-l-0">
+                        Work Order
+                      </th>
+                      <th className="border-l border-white/15 px-4 py-2.5 font-heading font-semibold">
+                        Name
+                      </th>
+                      <th className="border-l border-white/15 px-4 py-2.5 font-heading font-semibold">
+                        Invoice
+                      </th>
+                      <th className="border-l border-white/15 px-4 py-2.5 font-heading font-semibold">
+                        Invoice Date
+                      </th>
+                      <th className="border-l border-white/15 px-4 py-2.5 text-right font-heading font-semibold">
+                        Total
+                      </th>
+                      <th className="border-l border-white/15 px-4 py-2.5 text-right font-heading font-semibold">
+                        Days Pending
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {m.pending.map(({ r, days }, i) => (
                       <tr
                         key={r.id}
-                        className={`border-t border-slate-100 transition hover:bg-brand-50 ${
-                          i % 2 ? 'bg-brand-50/40' : 'bg-white'
+                        className={`border-b border-slate-200 transition hover:bg-brand-50 ${
+                          i % 2 ? 'bg-brand-50' : 'bg-white'
                         }`}
                       >
-                        <td className="tabular px-4 py-1.5 font-semibold text-slate-800">
+                        <td className="tabular border-l border-slate-200 px-4 py-1.5 font-semibold text-slate-700 first:border-l-0">
                           {r.work_order_no}
                         </td>
-                        <td className="max-w-[240px] truncate px-4 py-1.5 font-medium text-slate-600">
+                        <td className="max-w-[240px] truncate border-l border-slate-200 px-4 py-1.5 font-semibold text-slate-700">
                           {r.wo_name || '—'}
                         </td>
-                        <td className="tabular px-4 py-1.5 text-slate-600">{r.invoice_no}</td>
-                        <td className="tabular px-4 py-1.5 text-slate-600">
+                        <td className="tabular border-l border-slate-200 px-4 py-1.5 font-semibold text-slate-700">
+                          {r.invoice_no}
+                        </td>
+                        <td className="tabular border-l border-slate-200 px-4 py-1.5 font-semibold text-slate-700">
                           {formatDate(r.invoice_date) || '—'}
                         </td>
-                        <td className="tabular px-4 py-1.5 text-right text-[15.5px] font-bold text-slate-800">
+                        <td className="tabular border-l border-slate-200 px-4 py-1.5 text-right font-semibold text-slate-800">
                           {formatAmt(r.total_amt)}
                         </td>
-                        <td className="px-4 py-1.5 text-right">
+                        <td className="border-l border-slate-200 px-4 py-1.5 text-right">
                           <span
                             className={`tabular inline-block rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${
                               days > 60

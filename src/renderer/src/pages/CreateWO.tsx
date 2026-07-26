@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Save, Eraser, Pencil, RefreshCw, Trash2, CalendarDays, CalendarRange, FilePlus2, Search } from 'lucide-react'
+import { Save, Eraser, Pencil, RefreshCw, Trash2, CalendarDays, CalendarRange, FilePlus2, Search, Upload, FileDown, Loader2 } from 'lucide-react'
 import type { WorkOrder } from '../lib/types'
 import { Field, TextInput, NumberInput, DateInput, DataTable, Select, EditableCombo, type Column } from '../components/ui'
 import DownloadMenu from '../components/DownloadMenu'
@@ -27,9 +27,35 @@ const blank = {
   wo_name: ''
 }
 
+// Columns for the Create WO Excel import/template (must match the main-process importer)
+const WO_TEMPLATE_HEADERS = [
+  'Work Order No',
+  'Invoice No',
+  'Invoice Date',
+  'Work Start Date',
+  'Work End Date',
+  'Gross Value',
+  'GST %',
+  'GST Amount',
+  'Name of WO'
+]
+// One illustrative row so users see the expected format (dates dd-mm-yyyy; give GST % OR GST Amount)
+const WO_TEMPLATE_SAMPLE: (string | number)[] = [
+  '70190647',
+  '25',
+  '01-09-2025',
+  '01-05-2025',
+  '21-07-2025',
+  800000,
+  18,
+  '',
+  'GRASS CUTTING JOB'
+]
+
 export default function CreateWO(): React.JSX.Element {
   const [rows, setRows] = useState<WorkOrder[]>([])
   const [names, setNames] = useState<string[]>([])
+  const [woNameMap, setWoNameMap] = useState<Record<string, string>>({})
   const [search, setSearch] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -38,11 +64,13 @@ export default function CreateWO(): React.JSX.Element {
   const [editing, setEditing] = useState<WorkOrder | null>(null)
   const [woStatus, setWoStatus] = useState('Created')
   const [cancelRemarks, setCancelRemarks] = useState('')
+  const [importing, setImporting] = useState(false)
 
   async function reload(): Promise<void> {
     const [list, nm] = await Promise.all([window.api.wo.list(), window.api.wo.names()])
     setRows(list)
     setNames(nm.map((n) => n.work_order_no))
+    setWoNameMap(Object.fromEntries(nm.map((n) => [n.work_order_no, n.wo_name || ''])))
   }
   useEffect(() => {
     reload()
@@ -218,6 +246,39 @@ export default function CreateWO(): React.JSX.Element {
   }
 
 
+  // Download a blank Create WO template (headers + one sample row) as Excel
+  async function downloadTemplate(): Promise<void> {
+    try {
+      const res = await window.api.excel.export({
+        defaultName: `CreateWO_Template_${todayISO()}`,
+        headers: WO_TEMPLATE_HEADERS,
+        rows: [WO_TEMPLATE_SAMPLE]
+      })
+      if (res.ok) toast.success('Template downloaded. Fill it and use Import.')
+      else if (res.message) toast.message(res.message)
+    } catch (e) {
+      toast.error(errText(e))
+    }
+  }
+
+  // Bulk-import work orders from an Excel file (appends into the active company)
+  async function importExcel(): Promise<void> {
+    setImporting(true)
+    try {
+      const res = await window.api.wo.importExcel('append')
+      if (res.ok) {
+        toast.success(res.message)
+        reload()
+      } else if (res.message && res.message !== 'Import cancelled.') {
+        toast.error(res.message)
+      }
+    } catch (e) {
+      toast.error(errText(e))
+    } finally {
+      setImporting(false)
+    }
+  }
+
   function buildDownload(): DownloadPayload {
     return {
       title: 'Work Orders',
@@ -298,7 +359,12 @@ export default function CreateWO(): React.JSX.Element {
             <Field label="Work Order No">
               <EditableCombo
                 value={form.work_order_no}
-                onChange={(v) => set('work_order_no', v)}
+                onChange={(v) => {
+                  set('work_order_no', v)
+                  // auto-fill Name of WO when an existing work order is chosen (user can still edit it)
+                  const known = woNameMap[v]
+                  if (known) set('wo_name', known)
+                }}
                 options={names}
                 disabled={!!editing}
                 placeholder="Select or type…"
@@ -375,8 +441,8 @@ export default function CreateWO(): React.JSX.Element {
 
       {/* RIGHT: toolbar + table + totals */}
       <div className="flex min-w-0 flex-1 flex-col gap-2.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative w-[26rem] max-w-full">
+        <div className="flex items-center gap-2">
+          <div className="relative w-56 shrink-0">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               className="input h-10 w-full border-slate-300 bg-white pl-9 shadow-sm focus:shadow"
@@ -386,15 +452,36 @@ export default function CreateWO(): React.JSX.Element {
             />
           </div>
           <DownloadMenu build={buildDownload} />
+          <button
+            className="btn-ghost !px-2.5"
+            onClick={downloadTemplate}
+            title="Download the Excel import template"
+            aria-label="Download import template"
+          >
+            <FileDown className="h-[18px] w-[18px]" />
+          </button>
+          <button
+            className="btn-teal !px-2.5"
+            onClick={importExcel}
+            disabled={importing}
+            title="Import work orders from Excel"
+            aria-label="Import work orders from Excel"
+          >
+            {importing ? (
+              <Loader2 className="h-[18px] w-[18px] animate-spin" />
+            ) : (
+              <Upload className="h-[18px] w-[18px]" />
+            )}
+          </button>
 
-          <div className="ml-auto flex items-center gap-2">
-            <CalendarRange className="h-4 w-4 text-brand-600" />
-            <span className="text-[13px] font-semibold text-slate-500">Range</span>
-            <div className="w-36">
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
+            <CalendarRange className="h-4 w-4 shrink-0 text-brand-600" />
+            <span className="shrink-0 text-[13px] font-semibold text-slate-500">Range</span>
+            <div className="w-32 shrink-0">
               <DateInput iso={from} onISO={setFrom} />
             </div>
-            <span className="text-slate-300">–</span>
-            <div className="w-36">
+            <span className="shrink-0 text-slate-300">–</span>
+            <div className="w-32 shrink-0">
               <DateInput iso={to} onISO={setTo} />
             </div>
             {(from || to) && (
@@ -403,7 +490,7 @@ export default function CreateWO(): React.JSX.Element {
                   setFrom('')
                   setTo('')
                 }}
-                className="text-[13px] font-semibold text-slate-400 hover:text-brand-600"
+                className="shrink-0 text-[13px] font-semibold text-slate-400 hover:text-brand-600"
               >
                 Clear
               </button>
@@ -416,6 +503,7 @@ export default function CreateWO(): React.JSX.Element {
             columns={columns}
             rows={filtered}
             minWidth={1250}
+            defaultSortKey="invoice_no"
             selectedIndex={sel}
             onSelect={(i) => setSel(i)}
             onRowDoubleClick={(_i, r) => beginEdit(r)}

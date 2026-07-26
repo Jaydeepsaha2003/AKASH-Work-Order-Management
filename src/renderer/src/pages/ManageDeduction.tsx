@@ -360,6 +360,7 @@ export default function ManageDeduction(): React.JSX.Element {
             columns={columns}
             rows={filtered}
             minWidth={1500}
+            defaultSortKey="invoice_no"
             selectedIndex={sel}
             onSelect={(i) => setSel(i)}
             rowActions={(r) => (

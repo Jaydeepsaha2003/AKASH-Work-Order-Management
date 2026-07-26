@@ -12,7 +12,9 @@ const api = {
     names: () => ipcRenderer.invoke('wo:names'),
     create: (values: unknown) => ipcRenderer.invoke('wo:create', values),
     update: (values: unknown) => ipcRenderer.invoke('wo:update', values),
-    remove: (id: number) => ipcRenderer.invoke('wo:delete', { id })
+    remove: (id: number) => ipcRenderer.invoke('wo:delete', { id }),
+    importExcel: (mode: 'append' | 'replace') =>
+      ipcRenderer.invoke('wo:importExcel', { mode })
   },
   inv: {
     save: (values: unknown) => ipcRenderer.invoke('inv:save', values),

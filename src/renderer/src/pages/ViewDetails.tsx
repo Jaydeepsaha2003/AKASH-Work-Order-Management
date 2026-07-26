@@ -251,7 +251,7 @@ export default function ViewDetails(): React.JSX.Element {
       </div>
 
       <div className="min-h-0 flex-1">
-        <DataTable columns={columns} rows={filtered} minWidth={2100} />
+        <DataTable columns={columns} rows={filtered} minWidth={2100} defaultSortKey="invoice_no" />
       </div>
 
       <div className="grid grid-cols-3 gap-4">

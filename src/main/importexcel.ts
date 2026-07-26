@@ -85,6 +85,19 @@ function findSheet(wb: ExcelJS.Workbook, name: string): ExcelJS.Worksheet | unde
   return wb.worksheets.find((w) => w.name.trim().toLowerCase() === name.toLowerCase())
 }
 
+function todayIso(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+// financial year (Apr–Mar) from an ISO date, e.g. 2024-05-01 → "2024-25"
+function finYearFromIso(iso: string): string {
+  const d = iso ? new Date(iso) : new Date()
+  const y = d.getFullYear()
+  const startY = (d.getMonth() + 1 >= 4 ? y : y - 1)
+  return `${startY}-${pad((startY + 1) % 100)}`
+}
+
 export async function importExcel(
   win: BrowserWindow | null,
   opts: { mode: 'append' | 'replace' }
@@ -255,4 +268,173 @@ export async function importFromPath(
     dedInserted,
     filePath
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Create WO — simple work-order-only import (header-mapped, order-agnostic)  */
+/* -------------------------------------------------------------------------- */
+
+// Column headers used by the Create WO template (order shown to the user).
+export const WO_TEMPLATE_HEADERS = [
+  'Work Order No',
+  'Invoice No',
+  'Invoice Date',
+  'Work Start Date',
+  'Work End Date',
+  'Gross Value',
+  'GST %',
+  'GST Amount',
+  'Name of WO'
+]
+
+// Accepted header spellings → canonical field (matched case/space/symbol-insensitively).
+// NOTE: '%' is preserved by normHeader so "GST %" stays distinct from "GST Amount".
+const WO_HEADER_ALIASES: Record<string, string[]> = {
+  work_order_no: ['work order no', 'work order', 'wo no', 'work_order_no', 'workorder'],
+  invoice_no: ['invoice no', 'inv no', 'invoice', 'invoice_no'],
+  invoice_date: ['invoice date', 'inv date', 'invoice_date'],
+  start_date: ['work start date', 'start date', 'start_date'],
+  end_date: ['work end date', 'end date', 'end_date'],
+  gross_value: ['gross value', 'gross', 'gross_value'],
+  gst_pct: ['gst %', 'gst%', 'gst percent', 'gst pct', 'gst percentage'],
+  gst_amt: ['gst amount', 'gst amt', 'gst on gross', 'gst_amt'],
+  wo_name: ['name of wo', 'name of work order', 'name', 'wo name', 'wo_name']
+}
+
+function normHeader(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9%]/g, '')
+}
+
+export async function importWorkOrders(
+  win: BrowserWindow | null,
+  mode: 'append' | 'replace' = 'append'
+): Promise<ImportResult> {
+  const picked = await dialog.showOpenDialog(win!, {
+    title: 'Select the Create WO Excel file',
+    filters: [{ name: 'Excel Files', extensions: ['xlsx', 'xlsm'] }],
+    properties: ['openFile']
+  })
+  if (picked.canceled || !picked.filePaths[0]) {
+    return { ok: false, message: 'Import cancelled.' }
+  }
+  return importWorkOrdersFromPath(picked.filePaths[0], mode)
+}
+
+export async function importWorkOrdersFromPath(
+  filePath: string,
+  mode: 'append' | 'replace' = 'append'
+): Promise<ImportResult> {
+  const wb = new ExcelJS.Workbook()
+  try {
+    await wb.xlsx.readFile(filePath)
+  } catch {
+    return { ok: false, message: 'Could not read the file. Please pick a valid .xlsx/.xlsm.' }
+  }
+
+  const ws =
+    findSheet(wb, 'Work Orders') ||
+    findSheet(wb, 'WorkOrders') ||
+    findSheet(wb, 'Create WO') ||
+    findSheet(wb, 'Data') ||
+    wb.worksheets[0]
+  if (!ws) return { ok: false, message: 'The workbook has no sheets.' }
+
+  // Map header names → column index (order-agnostic)
+  const col: Record<string, number> = {}
+  ws.getRow(1).eachCell((cell, c) => {
+    const h = normHeader(text(cell.value))
+    if (!h) return
+    for (const key of Object.keys(WO_HEADER_ALIASES)) {
+      if (WO_HEADER_ALIASES[key].some((a) => normHeader(a) === h)) col[key] = c
+    }
+  })
+  if (col.work_order_no === undefined) {
+    return {
+      ok: false,
+      message: 'Could not find a "Work Order No" column. Please use the downloadable template format.'
+    }
+  }
+
+  const db = getDb()
+  const cid = getActiveCompanyId()
+  let woInserted = 0
+  let woSkipped = 0
+
+  const woInsert = db.prepare(
+    `INSERT OR IGNORE INTO workorders
+      (company_id, fin_year, entry_date, work_order_no, start_date, end_date, invoice_no, invoice_date,
+       rec_date, gross_value, gst_on_gross, total_amt, wo_status, cancel_remarks,
+       income_tax, gst_2, cem_bags, labour_cess, penalty, land_rent, gst_rent_penalty,
+       round_off, hse, price_deduction, sd_amt, net_amount, wo_name)
+     VALUES (@company_id, @fin_year, @entry_date, @work_order_no, @start_date, @end_date, @invoice_no,
+       @invoice_date, @rec_date, @gross_value, @gst_on_gross, @total_amt, @wo_status,
+       @cancel_remarks, @income_tax, @gst_2, @cem_bags, @labour_cess, @penalty, @land_rent,
+       @gst_rent_penalty, @round_off, @hse, @price_deduction, @sd_amt, @net_amount, @wo_name)`
+  )
+  const woListUpsert = db.prepare(
+    `INSERT INTO work_order_list (company_id, work_order_no, wo_name) VALUES (?, ?, ?)
+     ON CONFLICT(company_id, work_order_no) DO UPDATE SET wo_name = COALESCE(NULLIF(excluded.wo_name, ''), work_order_list.wo_name)`
+  )
+
+  const cellOf = (row: ExcelJS.Row, key: string): ExcelJS.CellValue =>
+    col[key] !== undefined ? row.getCell(col[key]).value : null
+
+  const tx = db.transaction(() => {
+    if (mode === 'replace') {
+      db.prepare('DELETE FROM workorders WHERE company_id = ?').run(cid)
+      db.prepare('DELETE FROM work_order_list WHERE company_id = ?').run(cid)
+    }
+    ws.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return
+      const workNo = text(cellOf(row, 'work_order_no'))
+      const invoiceNo = text(cellOf(row, 'invoice_no'))
+      if (!workNo && !invoiceNo) return // blank row
+
+      const gross = num(cellOf(row, 'gross_value'))
+      const gstAmt = num(cellOf(row, 'gst_amt'))
+      const gstPct = num(cellOf(row, 'gst_pct'))
+      const gst = gstAmt || (gross * gstPct) / 100
+      const total = gross + gst
+      const invDate = isoDate(cellOf(row, 'invoice_date')) || null
+      const woName = text(cellOf(row, 'wo_name'))
+
+      const info = woInsert.run({
+        company_id: cid,
+        fin_year: finYearFromIso(invDate || ''),
+        entry_date: todayIso(),
+        work_order_no: workNo,
+        start_date: isoDate(cellOf(row, 'start_date')) || null,
+        end_date: isoDate(cellOf(row, 'end_date')) || null,
+        invoice_no: invoiceNo,
+        invoice_date: invDate,
+        rec_date: null,
+        gross_value: gross,
+        gst_on_gross: gst,
+        total_amt: total,
+        wo_status: 'Created',
+        cancel_remarks: null,
+        income_tax: 0,
+        gst_2: 0,
+        cem_bags: 0,
+        labour_cess: 0,
+        penalty: 0,
+        land_rent: 0,
+        gst_rent_penalty: 0,
+        round_off: 0,
+        hse: 0,
+        price_deduction: 0,
+        sd_amt: 0,
+        net_amount: total,
+        wo_name: woName || null
+      })
+      if (info.changes > 0) woInserted++
+      else woSkipped++
+      if (workNo) woListUpsert.run(cid, workNo, woName)
+    })
+  })
+  tx()
+
+  const parts = [`${woInserted} work order${woInserted === 1 ? '' : 's'} imported`]
+  if (woSkipped) parts.push(`${woSkipped} skipped (duplicates)`)
+  return { ok: true, message: parts.join(', ') + '.', woInserted, woSkipped, filePath }
 }

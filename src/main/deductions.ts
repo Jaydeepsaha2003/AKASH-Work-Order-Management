@@ -1,5 +1,6 @@
 import { getDb } from './db'
 import { getActiveCompanyId } from './company'
+import { syncWoName } from './workorders'
 import type { Deduction, DeductionInput, OutstandingRow } from './types'
 
 const num = (v: unknown): number => {
@@ -38,6 +39,7 @@ export function saveDeduction(input: DeductionInput): { ok: boolean; message: st
     input.create_status || 'Manual',
     input.wo_name
   )
+  syncWoName(cid, input.work_order_no, input.wo_name)
   return { ok: true, message: 'Deduction record saved successfully.' }
 }
 
@@ -81,6 +83,7 @@ export function updateDeduction(input: DeductionInput): { ok: boolean; message: 
     input.id,
     getActiveCompanyId()
   )
+  syncWoName(getActiveCompanyId(), input.work_order_no, input.wo_name)
   return { ok: true, message: 'Deduction record updated successfully.' }
 }
 
