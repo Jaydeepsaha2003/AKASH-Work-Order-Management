@@ -251,7 +251,15 @@ export default function ViewDetails(): React.JSX.Element {
       </div>
 
       <div className="min-h-0 flex-1">
-        <DataTable columns={columns} rows={filtered} minWidth={2100} defaultSortKey="invoice_no" />
+        <DataTable
+          columns={columns}
+          rows={filtered}
+          minWidth={2100}
+          defaultSort={[
+            { key: 'fin_year', dir: 'desc' },
+            { key: 'invoice_no', dir: 'asc' }
+          ]}
+        />
       </div>
 
       <div className="grid grid-cols-3 gap-4">

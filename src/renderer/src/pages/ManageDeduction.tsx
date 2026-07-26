@@ -269,7 +269,10 @@ export default function ManageDeduction(): React.JSX.Element {
           columns={columns}
           rows={filtered}
           minWidth={1500}
-          defaultSortKey="invoice_no"
+          defaultSort={[
+              { key: 'fin_year', dir: 'desc' },
+              { key: 'invoice_no', dir: 'asc' }
+            ]}
           selectedIndex={sel}
           onSelect={(i) => setSel(i)}
           rowActions={(r) => (

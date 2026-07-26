@@ -186,7 +186,10 @@ export default function UpdateInvoice(): React.JSX.Element {
           columns={columns}
           rows={filtered}
           minWidth={900}
-          defaultSortKey="invoice_no"
+          defaultSort={[
+              { key: 'fin_year', dir: 'desc' },
+              { key: 'invoice_no', dir: 'asc' }
+            ]}
           selectedIndex={sel}
           onSelect={(i) => setSel(i)}
           actionsHeader="Action"

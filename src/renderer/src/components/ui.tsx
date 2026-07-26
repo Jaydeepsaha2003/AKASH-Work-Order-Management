@@ -420,7 +420,8 @@ export function DataTable<T>({
   rowActions,
   actionsHeader = 'Actions',
   defaultSortKey,
-  defaultSortDir = 'asc'
+  defaultSortDir = 'asc',
+  defaultSort
 }: {
   columns: Column<T>[]
   rows: T[]
@@ -432,15 +433,19 @@ export function DataTable<T>({
   // when provided, a pinned (always-visible) right column of per-row actions is shown
   rowActions?: (row: T, i: number) => React.ReactNode
   actionsHeader?: string
-  // initial sort column (e.g. 'invoice_no'); users can still click to re-sort
+  // initial single-column sort (e.g. 'invoice_no'); users can still click to re-sort
   defaultSortKey?: string
   defaultSortDir?: 'asc' | 'desc'
+  // multi-level default sort applied until the user clicks a header
+  // e.g. [{ key: 'fin_year', dir: 'desc' }, { key: 'invoice_no', dir: 'asc' }]
+  defaultSort?: { key: string; dir: 'asc' | 'desc' }[]
 }): React.JSX.Element {
   const rowBg = (i: number): string =>
     selectedIndex === i ? 'bg-brand-100' : i % 2 ? 'bg-brand-50' : 'bg-white'
 
-  const [sortKey, setSortKey] = useState<string | null>(defaultSortKey ?? null)
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(defaultSortDir)
+  // User-driven single-column sort (null until a header is clicked)
+  const [sortKey, setSortKey] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
   const toggleSort = (key: string): void => {
     if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
@@ -450,24 +455,43 @@ export function DataTable<T>({
     }
   }
 
+  // Effective default sort: explicit multi-level, else the single defaultSortKey, else none
+  const defaultLevels = useMemo(
+    () =>
+      defaultSort ?? (defaultSortKey ? [{ key: defaultSortKey, dir: defaultSortDir }] : []),
+    [defaultSort, defaultSortKey, defaultSortDir]
+  )
+
   const sorted = useMemo(() => {
-    if (!sortKey) return rows
-    const col = columns.find((c) => c.key === sortKey)
-    const numeric = !!col?.numeric
-    const copy = [...rows]
-    copy.sort((a, b) => {
-      const av = (a as Record<string, unknown>)[sortKey]
-      const bv = (b as Record<string, unknown>)[sortKey]
+    const cmpBy = (a: T, b: T, key: string, dir: 'asc' | 'desc'): number => {
+      const col = columns.find((c) => c.key === key)
+      const av = (a as Record<string, unknown>)[key]
+      const bv = (b as Record<string, unknown>)[key]
       let cmp: number
-      if (numeric) {
+      if (col?.numeric) {
         cmp = (parseFloat(String(av)) || 0) - (parseFloat(String(bv)) || 0)
       } else {
         cmp = String(av ?? '').localeCompare(String(bv ?? ''), undefined, { numeric: true })
       }
-      return sortDir === 'asc' ? cmp : -cmp
-    })
-    return copy
-  }, [rows, sortKey, sortDir, columns])
+      return dir === 'asc' ? cmp : -cmp
+    }
+
+    // A user click overrides the default with a single-column sort.
+    if (sortKey) {
+      return [...rows].sort((a, b) => cmpBy(a, b, sortKey, sortDir))
+    }
+    // Otherwise apply the multi-level default sort (if any).
+    if (defaultLevels.length) {
+      return [...rows].sort((a, b) => {
+        for (const lvl of defaultLevels) {
+          const c = cmpBy(a, b, lvl.key, lvl.dir)
+          if (c !== 0) return c
+        }
+        return 0
+      })
+    }
+    return rows
+  }, [rows, sortKey, sortDir, columns, defaultLevels])
 
   return (
     <div className="h-full overflow-auto rounded-xl border border-slate-200">
