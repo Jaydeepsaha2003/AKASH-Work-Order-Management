@@ -1,11 +1,33 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Filter, CalendarRange } from 'lucide-react'
+import { toast } from 'sonner'
+import { Filter, CalendarRange, Pencil, RefreshCw } from 'lucide-react'
 import type { WorkOrder } from '../lib/types'
-import { DataTable, DateInput, Select, type Column } from '../components/ui'
-import { formatAmt, formatDate, todayISO } from '../lib/format'
+import {
+  DataTable,
+  DateInput,
+  Select,
+  Modal,
+  Field,
+  TextInput,
+  NumberInput,
+  type Column
+} from '../components/ui'
+import { formatAmt, formatDate, toNum, todayISO, errText, fail } from '../lib/format'
 import DownloadMenu from '../components/DownloadMenu'
 import type { DownloadPayload } from '../lib/download'
 import { StatusBadge } from './CreateWO'
+
+const blankEdit = {
+  work_order_no: '',
+  invoice_no: '',
+  start_date: '',
+  end_date: '',
+  invoice_date: '',
+  gross_value: '',
+  gst_per: '',
+  gst_amt: '',
+  wo_name: ''
+}
 
 const HEADERS = [
   'Financial Year',
@@ -85,9 +107,80 @@ export default function ViewDetails(): React.JSX.Element {
   const [to, setTo] = useState('')
   const [fyValue, setFyValue] = useState('')
 
+  // per-row invoice edit (modal)
+  const [editing, setEditing] = useState<WorkOrder | null>(null)
+  const [form, setForm] = useState({ ...blankEdit })
+  const [woStatus, setWoStatus] = useState('Created')
+  const [cancelRemarks, setCancelRemarks] = useState('')
+
+  async function reload(): Promise<void> {
+    setRows(await window.api.wo.list())
+  }
   useEffect(() => {
-    window.api.wo.list().then(setRows)
+    reload()
   }, [])
+
+  const editTotal = useMemo(() => {
+    const gross = toNum(form.gross_value)
+    if (!form.gross_value) return ''
+    const hasPct = form.gst_per !== ''
+    const hasAmt = form.gst_amt !== ''
+    if (hasPct && hasAmt) return 'ERR'
+    let gst = 0
+    if (hasPct) gst = (gross * toNum(form.gst_per)) / 100
+    else if (hasAmt) gst = toNum(form.gst_amt)
+    return (gross + gst).toFixed(2)
+  }, [form.gross_value, form.gst_per, form.gst_amt])
+
+  function beginEdit(r: WorkOrder): void {
+    setEditing(r)
+    setWoStatus(r.wo_status || 'Created')
+    setCancelRemarks(r.cancel_remarks || '')
+    setForm({
+      work_order_no: r.work_order_no,
+      invoice_no: r.invoice_no,
+      start_date: r.start_date || '',
+      end_date: r.end_date || '',
+      invoice_date: r.invoice_date || todayISO(),
+      gross_value: String(r.gross_value ?? ''),
+      gst_per: '',
+      gst_amt: String(r.gst_on_gross ?? ''),
+      wo_name: r.wo_name || ''
+    })
+  }
+
+  function setF<K extends keyof typeof form>(k: K, v: (typeof form)[K]): void {
+    setForm((f) => ({ ...f, [k]: v }))
+  }
+
+  async function saveEdit(): Promise<void> {
+    if (!editing) return
+    if (editTotal === 'ERR') return fail('Please enter either GST % or GST Amount, not both.')
+    if (!form.invoice_no.trim()) return fail('Invoice No is required.')
+    try {
+      const res = await window.api.wo.update({
+        id: editing.id,
+        fin_year: editing.fin_year,
+        work_order_no: form.work_order_no,
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
+        invoice_no: form.invoice_no.trim(),
+        invoice_date: form.invoice_date || null,
+        gross_value: toNum(form.gross_value),
+        total_amt: toNum(editTotal === 'ERR' ? '0' : editTotal),
+        wo_name: form.wo_name || null,
+        wo_status: woStatus,
+        cancel_remarks: cancelRemarks || null
+      })
+      if (res.ok) {
+        toast.success(res.message)
+        setEditing(null)
+        reload()
+      } else toast.error(res.message)
+    } catch (e) {
+      toast.error(errText(e))
+    }
+  }
 
   // financial years present in the data (newest first)
   const availableFYs = useMemo(() => {
@@ -259,6 +352,16 @@ export default function ViewDetails(): React.JSX.Element {
             { key: 'fin_year', dir: 'desc' },
             { key: 'invoice_no', dir: 'asc' }
           ]}
+          onRowDoubleClick={(_i, r) => beginEdit(r)}
+          rowActions={(r) => (
+            <button
+              title="Edit invoice"
+              onClick={() => beginEdit(r)}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
         />
       </div>
 
@@ -267,6 +370,99 @@ export default function ViewDetails(): React.JSX.Element {
         <TotalCard label="With Hold / HSE Total" value={totals.hse} color="from-brand-600 to-brand-500" />
         <TotalCard label="Price Deduction Total" value={totals.prs} color="from-teal-600 to-cyan-600" />
       </div>
+
+      {/* Per-row invoice edit modal */}
+      <Modal
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title="Edit Invoice"
+        icon={Pencil}
+        footer={
+          <>
+            <button className="btn-ghost" onClick={() => setEditing(null)}>
+              Cancel
+            </button>
+            <button className="btn-primary" onClick={saveEdit}>
+              <RefreshCw className="h-4 w-4" /> Update
+            </button>
+          </>
+        }
+      >
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-[13px]">
+          <span className="rounded-lg bg-brand-50 px-2.5 py-1 font-heading font-semibold text-brand-700">
+            FY {editing?.fin_year}
+          </span>
+          <span className="rounded-lg bg-slate-100 px-2.5 py-1 font-heading font-semibold text-slate-600">
+            WO {editing?.work_order_no}
+          </span>
+          <span className="text-slate-400">Fin-Year & Work Order No are locked.</span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Work Order No">
+            <TextInput readOnlyLook readOnly className="tabular" value={form.work_order_no} />
+          </Field>
+          <Field label="Invoice No">
+            <TextInput
+              className="tabular"
+              value={form.invoice_no}
+              onChange={(e) => setF('invoice_no', e.target.value)}
+            />
+          </Field>
+          <Field label="Invoice Date">
+            <DateInput iso={form.invoice_date} onISO={(v) => setF('invoice_date', v)} />
+          </Field>
+          <Field label="Work Start Date">
+            <DateInput iso={form.start_date} onISO={(v) => setF('start_date', v)} />
+          </Field>
+          <Field label="Work End Date">
+            <DateInput iso={form.end_date} onISO={(v) => setF('end_date', v)} />
+          </Field>
+          <Field label="Name of WO">
+            <TextInput
+              className="tabular"
+              value={form.wo_name}
+              onChange={(e) => setF('wo_name', e.target.value)}
+            />
+          </Field>
+          <Field label="Gross Value">
+            <NumberInput value={form.gross_value} onValue={(v) => setF('gross_value', v)} />
+          </Field>
+          <Field label="GST %">
+            <NumberInput value={form.gst_per} onValue={(v) => setF('gst_per', v)} />
+          </Field>
+          <Field label="GST Amt">
+            <NumberInput value={form.gst_amt} onValue={(v) => setF('gst_amt', v)} />
+          </Field>
+          <Field label="Total Amt">
+            <TextInput
+              readOnlyLook
+              readOnly
+              className="tabular text-right font-semibold"
+              value={editTotal === 'ERR' ? '' : editTotal}
+            />
+          </Field>
+          <Field label="WO Status">
+            <Select
+              value={woStatus}
+              onChange={setWoStatus}
+              options={[
+                { value: 'Created', label: 'Created' },
+                { value: 'Received', label: 'Received' },
+                { value: 'Cancelled', label: 'Cancelled' }
+              ]}
+            />
+          </Field>
+          {woStatus === 'Cancelled' && (
+            <Field label="Cancel Remarks">
+              <TextInput
+                value={cancelRemarks}
+                onChange={(e) => setCancelRemarks(e.target.value)}
+              />
+            </Field>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }

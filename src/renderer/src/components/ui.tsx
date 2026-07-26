@@ -1,9 +1,71 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown, ChevronUp, ChevronsUpDown, Search, Check, CalendarDays } from 'lucide-react'
+import { ChevronDown, ChevronUp, ChevronsUpDown, Search, Check, CalendarDays, X } from 'lucide-react'
 import { formatDate, toISODate } from '../lib/format'
 
 export function cn(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(' ')
+}
+
+// Centered modal dialog. Click the backdrop or press Escape to close.
+export function Modal({
+  open,
+  onClose,
+  title,
+  icon: Icon,
+  children,
+  footer,
+  maxWidth = 'max-w-4xl'
+}: {
+  open: boolean
+  onClose: () => void
+  title: string
+  icon?: React.ComponentType<{ className?: string }>
+  children: React.ReactNode
+  footer?: React.ReactNode
+  maxWidth?: string
+}): React.JSX.Element | null {
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
+  if (!open) return null
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-slate-900/50 p-4 backdrop-blur-sm animate-fade-in"
+      onClick={onClose}
+    >
+      <div
+        className={cn(
+          'my-8 w-full rounded-2xl border border-slate-200 bg-white p-5 shadow-glow',
+          maxWidth
+        )}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center gap-2">
+          {Icon && (
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
+              <Icon className="h-5 w-5" />
+            </div>
+          )}
+          <h3 className="font-heading text-[17px] font-bold text-slate-800">{title}</h3>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        {children}
+        {footer && <div className="mt-5 flex justify-end gap-2">{footer}</div>}
+      </div>
+    </div>
+  )
 }
 
 export function Field({
