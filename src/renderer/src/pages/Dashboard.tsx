@@ -158,19 +158,11 @@ export default function Dashboard({
     const received = inRange.filter((r) => (r.wo_status || '').toLowerCase() === 'received')
     const created = inRange.filter((r) => (r.wo_status || '').toLowerCase() === 'created')
 
-    // SD / HSE / PRS pending — scoped to the date range by each deduction's date
-    const dedInRange =
-      !from && !to
-        ? deds
-        : deds.filter((d) => {
-            const dt = d.deduct_date || ''
-            if (from && dt < from) return false
-            if (to && dt > to) return false
-            return true
-          })
-    const sd = dedInRange.reduce((s, d) => s + (d.sd_debit - d.sd_credit), 0)
-    const hse = dedInRange.reduce((s, d) => s + (d.hse_debit - d.hse_credit), 0)
-    const prs = dedInRange.reduce((s, d) => s + (d.prs_debit - d.prs_credit), 0)
+    // SD / HSE / PRS current balance — always the running total across ALL financial
+    // years (debits − credits), independent of the selected date range.
+    const sd = deds.reduce((s, d) => s + (d.sd_debit - d.sd_credit), 0)
+    const hse = deds.reduce((s, d) => s + (d.hse_debit - d.hse_credit), 0)
+    const prs = deds.reduce((s, d) => s + (d.prs_debit - d.prs_credit), 0)
 
     // Turnover by financial year (within the selected date range)
     const byFy = new Map<string, number>()
@@ -338,11 +330,11 @@ export default function Dashboard({
           />
         </div>
 
-        {/* SD / HSE / PRS pending till date */}
+        {/* SD / HSE / PRS current running balance (all financial years) */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <PendingCard label="SD Pending" value={m.sd} color="from-rose-500 to-red-500" icon={ShieldAlert} />
-          <PendingCard label="HSE Pending" value={m.hse} color="from-brand-600 to-brand-500" icon={ShieldAlert} />
-          <PendingCard label="PRS Pending" value={m.prs} color="from-teal-600 to-cyan-600" icon={CircleDollarSign} />
+          <PendingCard label="SD Balance" value={m.sd} color="from-rose-500 to-red-500" icon={ShieldAlert} sub="Current balance · all years" />
+          <PendingCard label="HSE Balance" value={m.hse} color="from-brand-600 to-brand-500" icon={ShieldAlert} sub="Current balance · all years" />
+          <PendingCard label="PRS Balance" value={m.prs} color="from-teal-600 to-cyan-600" icon={CircleDollarSign} sub="Current balance · all years" />
         </div>
 
         {/* Charts */}
@@ -490,18 +482,21 @@ function PendingCard({
   label,
   value,
   color,
-  icon: Icon
+  icon: Icon,
+  sub
 }: {
   label: string
   value: number
   color: string
   icon: React.ComponentType<{ className?: string }>
+  sub?: string
 }): React.JSX.Element {
   return (
     <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${color} p-5 text-white shadow-glow`}>
       <Icon className="absolute right-3 top-3 h-8 w-8 text-white/20" />
       <div className="text-[14px] uppercase tracking-wide text-white/80">{label}</div>
       <div className="tabular mt-1 font-heading text-2xl font-bold">₹ {formatAmt(value)}</div>
+      {sub && <div className="mt-0.5 text-[12.5px] text-white/70">{sub}</div>}
     </div>
   )
 }

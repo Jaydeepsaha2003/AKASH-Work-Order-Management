@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, ChevronsUpDown, Search, Check, CalendarDays, X } from 'lucide-react'
-import { formatDate, toISODate } from '../lib/format'
+import { formatDate, toISODate, formatAmt } from '../lib/format'
 
 export function cn(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(' ')
@@ -483,7 +483,9 @@ export function DataTable<T>({
   actionsHeader = 'Actions',
   defaultSortKey,
   defaultSortDir = 'asc',
-  defaultSort
+  defaultSort,
+  showTotals = false,
+  totalsLabel = 'TOTAL'
 }: {
   columns: Column<T>[]
   rows: T[]
@@ -501,6 +503,9 @@ export function DataTable<T>({
   // multi-level default sort applied until the user clicks a header
   // e.g. [{ key: 'fin_year', dir: 'desc' }, { key: 'invoice_no', dir: 'asc' }]
   defaultSort?: { key: string; dir: 'asc' | 'desc' }[]
+  // render a pinned bottom row with column-wise sums of all numeric columns
+  showTotals?: boolean
+  totalsLabel?: string
 }): React.JSX.Element {
   const rowBg = (i: number): string =>
     selectedIndex === i ? 'bg-brand-100' : i % 2 ? 'bg-brand-50' : 'bg-white'
@@ -554,6 +559,20 @@ export function DataTable<T>({
     }
     return rows
   }, [rows, sortKey, sortDir, columns, defaultLevels])
+
+  // Column-wise sums for the totals row (numeric columns only)
+  const totals = useMemo(() => {
+    if (!showTotals) return {}
+    const acc: Record<string, number> = {}
+    for (const c of columns) {
+      if (!c.numeric) continue
+      acc[c.key] = rows.reduce(
+        (s, r) => s + (Number((r as Record<string, unknown>)[c.key]) || 0),
+        0
+      )
+    }
+    return acc
+  }, [rows, columns, showTotals])
 
   return (
     <div className="h-full overflow-auto rounded-xl border border-slate-200">
@@ -645,6 +664,38 @@ export function DataTable<T>({
             </tr>
           ))}
         </tbody>
+        {showTotals && rows.length > 0 && (
+          <tfoot className="sticky bottom-0 z-20">
+            <tr className="app-gradient text-white">
+              {columns.map((c, ci) => {
+                const alignRight = (c.align ?? (c.numeric ? 'right' : 'left')) === 'right'
+                return (
+                  <td
+                    key={c.key}
+                    className={cn(
+                      'whitespace-nowrap border-l border-white/15 px-3 py-2.5 font-heading text-[15px] font-bold first:border-l-0',
+                      c.numeric && 'tabular'
+                    )}
+                    style={{ textAlign: c.align ?? (c.numeric ? 'right' : 'left') }}
+                  >
+                    {c.numeric ? (
+                      formatAmt(totals[c.key] ?? 0)
+                    ) : ci === 0 ? (
+                      <span className={cn('inline-flex items-center gap-1', alignRight && 'flex-row-reverse')}>
+                        {totalsLabel}
+                      </span>
+                    ) : (
+                      ''
+                    )}
+                  </td>
+                )
+              })}
+              {rowActions && (
+                <td className="sticky right-0 z-10 border-l border-white/15 bg-brand-700 px-2 shadow-[-8px_0_10px_-8px_rgba(0,0,0,0.35)]" />
+              )}
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   )

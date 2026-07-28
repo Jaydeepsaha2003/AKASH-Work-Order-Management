@@ -352,6 +352,7 @@ export default function ViewDetails(): React.JSX.Element {
             { key: 'fin_year', dir: 'desc' },
             { key: 'invoice_no', dir: 'asc' }
           ]}
+          showTotals
           onRowDoubleClick={(_i, r) => beginEdit(r)}
           rowActions={(r) => (
             <button
