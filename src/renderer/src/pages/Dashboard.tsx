@@ -158,11 +158,14 @@ export default function Dashboard({
     const received = inRange.filter((r) => (r.wo_status || '').toLowerCase() === 'received')
     const created = inRange.filter((r) => (r.wo_status || '').toLowerCase() === 'created')
 
-    // SD / HSE / PRS current balance — always the running total across ALL financial
-    // years (debits − credits), independent of the selected date range.
-    const sd = deds.reduce((s, d) => s + (d.sd_debit - d.sd_credit), 0)
-    const hse = deds.reduce((s, d) => s + (d.hse_debit - d.hse_credit), 0)
-    const prs = deds.reduce((s, d) => s + (d.prs_debit - d.prs_credit), 0)
+    // SD / HSE / PRS running balance (debits − credits), accumulated across ALL prior
+    // financial years up to the END of the selected range (`to`). Selecting a Quick FY
+    // updates it to the carried-forward balance as of that FY's end. With no range
+    // (All Time) it's the full current balance.
+    const upto = (d: Deduction): boolean => !to || (d.deduct_date || '') <= to
+    const sd = deds.reduce((s, d) => (upto(d) ? s + (d.sd_debit - d.sd_credit) : s), 0)
+    const hse = deds.reduce((s, d) => (upto(d) ? s + (d.hse_debit - d.hse_credit) : s), 0)
+    const prs = deds.reduce((s, d) => (upto(d) ? s + (d.prs_debit - d.prs_credit) : s), 0)
 
     // Turnover by financial year (within the selected date range)
     const byFy = new Map<string, number>()
@@ -192,6 +195,7 @@ export default function Dashboard({
       sd,
       hse,
       prs,
+      balanceSub: to ? `Running balance · till ${formatDate(to)}` : 'Current balance · all years',
       fyData,
       pending,
       pendingValue
@@ -332,9 +336,9 @@ export default function Dashboard({
 
         {/* SD / HSE / PRS current running balance (all financial years) */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <PendingCard label="SD Balance" value={m.sd} color="from-rose-500 to-red-500" icon={ShieldAlert} sub="Current balance · all years" />
-          <PendingCard label="HSE Balance" value={m.hse} color="from-brand-600 to-brand-500" icon={ShieldAlert} sub="Current balance · all years" />
-          <PendingCard label="PRS Balance" value={m.prs} color="from-teal-600 to-cyan-600" icon={CircleDollarSign} sub="Current balance · all years" />
+          <PendingCard label="SD Balance" value={m.sd} color="from-rose-500 to-red-500" icon={ShieldAlert} sub={m.balanceSub} />
+          <PendingCard label="HSE Balance" value={m.hse} color="from-brand-600 to-brand-500" icon={ShieldAlert} sub={m.balanceSub} />
+          <PendingCard label="PRS Balance" value={m.prs} color="from-teal-600 to-cyan-600" icon={CircleDollarSign} sub={m.balanceSub} />
         </div>
 
         {/* Charts */}
