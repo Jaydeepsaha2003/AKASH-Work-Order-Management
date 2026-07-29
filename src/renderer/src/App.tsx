@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Toaster } from 'sonner'
 import type { AuthUser, Company, Page } from './lib/types'
 import Login from './pages/Login'
+import CreateWorkOrder from './pages/CreateWorkOrder'
 import CreateWO from './pages/CreateWO'
 import UpdateInvoice from './pages/UpdateInvoice'
 import ViewDetails from './pages/ViewDetails'
@@ -100,7 +101,7 @@ export default function App(): React.JSX.Element {
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Top bar (hidden on pages that have their own inline heading) */}
-        {page !== 'create' && page !== 'invoice' && page !== 'deduction' && (
+        {page !== 'create' && page !== 'invoice' && page !== 'deduction' && page !== 'workorder' && (
           <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-6 py-3.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
               <MetaIcon className="h-5 w-5" />
@@ -120,6 +121,7 @@ export default function App(): React.JSX.Element {
             {page === 'dashboard' && (
               <Dashboard username={user.username} company={activeCompany} onNavigate={setPage} />
             )}
+            {page === 'workorder' && <CreateWorkOrder />}
             {page === 'create' && <CreateWO />}
             {page === 'invoice' && <UpdateInvoice />}
             {page === 'view' && <ViewDetails />}

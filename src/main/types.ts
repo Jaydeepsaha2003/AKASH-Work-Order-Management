@@ -1,3 +1,19 @@
+export interface WoMaster {
+  id: number
+  name_of_work: string | null
+  job_location: string | null
+  work_order_no: string
+  wo_date: string | null
+  wo_value: number
+  executed_value: number
+  period_months: number
+  site_handover_date: string | null
+  on_site: string | null
+  remarks: string | null
+}
+
+export type WoMasterInput = Omit<WoMaster, 'id'>
+
 export interface WorkOrder {
   id: number
   fin_year: string

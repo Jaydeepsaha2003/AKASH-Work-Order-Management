@@ -17,8 +17,9 @@ import {
 } from './deductions'
 import { verifyLogin, changePassword } from './auth'
 import { exportToExcel, saveBinaryFile, type ExportRequest } from './exporter'
-import { importExcel, importWorkOrders } from './importexcel'
+import { importExcel, importWorkOrders, importWoMaster, importDeductions } from './importexcel'
 import { uploadPdfs, syncAttachments, listAttachments, openAttachment } from './attachments'
+import { listWoMaster, createWoMaster, updateWoMaster, deleteWoMaster } from './womaster'
 import { backupDatabase, restoreDatabase } from './backup'
 import {
   listCompanies,
@@ -130,6 +131,15 @@ export function registerIpc(): void {
     importWorkOrders(win, a?.mode ?? 'append')
   )
 
+  // Work order master (tracking sheet)
+  handle('wom:list', () => listWoMaster())
+  handle('wom:create', (a) => createWoMaster(a))
+  handle('wom:update', (a) => updateWoMaster(a.id, a))
+  handle('wom:delete', (a) => deleteWoMaster(a.id))
+  handle('wom:importExcel', (a: { mode: 'append' | 'replace' }, win) =>
+    importWoMaster(win, a?.mode ?? 'append')
+  )
+
   // Invoices
   handle('inv:save', (a) => saveInvoice(a))
   handle('inv:update', (a) => updateInvoice(a))
@@ -141,6 +151,9 @@ export function registerIpc(): void {
   handle('ded:delete', (a) => deleteDeduction(a.id))
   handle('ded:checkDup', (a) => checkDeductionDuplicate(a.fin_year, a.work_order_no, a.invoice_no))
   handle('ded:outstanding', () => outstanding())
+  handle('ded:importExcel', (a: { mode: 'append' | 'replace' }, win) =>
+    importDeductions(win, a?.mode ?? 'append')
+  )
 
   // Excel export / import
   handle('excel:export', (a: ExportRequest, win) => exportToExcel(win, a))

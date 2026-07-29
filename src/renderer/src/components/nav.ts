@@ -9,7 +9,8 @@ import {
   KeyRound,
   Upload,
   Building2,
-  History
+  History,
+  ClipboardList
 } from 'lucide-react'
 import type { Page } from '../lib/types'
 
@@ -25,6 +26,7 @@ export interface NavItem {
 // Primary items shown in the sidebar
 export const NAV_ITEMS: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', subtitle: 'Overview & reminders', icon: LayoutDashboard },
+  { key: 'workorder', label: 'Create WO', subtitle: 'Track & manage work orders', icon: ClipboardList },
   { key: 'create', label: 'Create Invoice', subtitle: 'Add work orders & invoices', icon: FilePlus2 },
   { key: 'invoice', label: 'Update Invoice', subtitle: 'Record receipts & deductions', icon: ReceiptText },
   { key: 'view', label: 'View Details', subtitle: 'Full register & reports', icon: Table2 },
@@ -36,12 +38,13 @@ export const NAV_ITEMS: NavItem[] = [
 // Meta for every page (for the top bar title)
 export const PAGE_META: Record<Page, { label: string; subtitle: string; icon: NavItem['icon'] }> = {
   dashboard: NAV_ITEMS[0],
-  create: NAV_ITEMS[1],
-  invoice: NAV_ITEMS[2],
-  view: NAV_ITEMS[3],
-  deduction: NAV_ITEMS[4],
-  outstanding: NAV_ITEMS[5],
-  activity: NAV_ITEMS[6],
+  workorder: NAV_ITEMS[1],
+  create: NAV_ITEMS[2],
+  invoice: NAV_ITEMS[3],
+  view: NAV_ITEMS[4],
+  deduction: NAV_ITEMS[5],
+  outstanding: NAV_ITEMS[6],
+  activity: NAV_ITEMS[7],
   settings: { label: 'Settings', subtitle: 'Updates, backup & account', icon: Settings },
   password: { label: 'Change Password', subtitle: 'Account security', icon: KeyRound },
   import: { label: 'Import Excel', subtitle: 'Load .xlsm / .xlsx data', icon: Upload },

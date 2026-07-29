@@ -9,7 +9,9 @@ import type {
   DeductionInput,
   Company,
   CompanyInput,
-  ActivityRow
+  ActivityRow,
+  WoMaster,
+  WoMasterInput
 } from '../main/types'
 
 export interface ExportRequest {
@@ -58,6 +60,13 @@ export interface Api {
       mode: 'append' | 'replace'
     ) => Promise<Res & { woInserted?: number; woSkipped?: number }>
   }
+  wom: {
+    list: () => Promise<WoMaster[]>
+    create: (values: WoMasterInput) => Promise<Res>
+    update: (values: WoMasterInput & { id: number }) => Promise<Res>
+    remove: (id: number) => Promise<Res>
+    importExcel: (mode: 'append' | 'replace') => Promise<Res & { woInserted?: number }>
+  }
   inv: {
     save: (values: InvoiceInput) => Promise<Res>
     update: (values: InvoiceInput) => Promise<Res>
@@ -69,6 +78,7 @@ export interface Api {
     remove: (id: number) => Promise<Res>
     checkDup: (fin_year: string, work_order_no: string, invoice_no: string) => Promise<boolean>
     outstanding: () => Promise<OutstandingRow[]>
+    importExcel: (mode: 'append' | 'replace') => Promise<Res & { dedInserted?: number }>
   }
   excel: {
     export: (req: ExportRequest) => Promise<Res & { path?: string }>

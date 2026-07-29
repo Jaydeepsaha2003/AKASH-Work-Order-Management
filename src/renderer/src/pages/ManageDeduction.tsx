@@ -1,12 +1,44 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Save, Eraser, RefreshCw, Trash2, Pencil, Scale, Search } from 'lucide-react'
+import { Save, Eraser, RefreshCw, Trash2, Pencil, Scale, Search, Upload, FileDown, Loader2 } from 'lucide-react'
 import type { Deduction, WoListItem } from '../lib/types'
 import { Field, TextInput, NumberInput, DateInput, EditableCombo, Select, DataTable, AttachmentBar, type Column, type FileRef } from '../components/ui'
 import { formatAmt, formatDate, financialYear, toNum, todayISO, errText, fail } from '../lib/format'
 
 // stable key that ties attachments to a deduction record
 const rk = (fy: string, wo: string, inv: string): string => [fy, wo, inv].join('::')
+
+// Columns for the deduction Excel import/template (must match the main-process importer)
+const DED_TEMPLATE_HEADERS = [
+  'Work Order No',
+  'Invoice No',
+  'Deduction Date',
+  'Deduc Rec Date',
+  'Description',
+  'Dr. SD Amt',
+  'Cr. SD Amt',
+  'Dr. PRS Amt',
+  'Cr. PRS Amt',
+  'Dr. HSE Amt',
+  'Cr. HSE Amt',
+  'Create Status',
+  'Name of Work'
+]
+const DED_TEMPLATE_SAMPLE: (string | number)[] = [
+  '28099166',
+  '3',
+  '30-12-2022',
+  '',
+  'SD Release against HSE panipat job',
+  0,
+  3587.78,
+  0,
+  0,
+  0,
+  0,
+  'Manual',
+  'HSE JOB IN PANIPAT'
+]
 import DownloadMenu from '../components/DownloadMenu'
 import type { DownloadPayload } from '../lib/download'
 
@@ -34,6 +66,38 @@ export default function ManageDeduction(): React.JSX.Element {
   const [editId, setEditId] = useState<number | null>(null)
   const [form, setForm] = useState({ ...blank })
   const [attachments, setAttachments] = useState<FileRef[]>([])
+  const [importing, setImporting] = useState(false)
+
+  async function downloadTemplate(): Promise<void> {
+    try {
+      const res = await window.api.excel.export({
+        defaultName: `Deduction_Template_${todayISO()}`,
+        headers: DED_TEMPLATE_HEADERS,
+        rows: [DED_TEMPLATE_SAMPLE]
+      })
+      if (res.ok) toast.success('Template downloaded. Fill it and use Import.')
+      else if (res.message) toast.message(res.message)
+    } catch (e) {
+      toast.error(errText(e))
+    }
+  }
+
+  async function importExcel(): Promise<void> {
+    setImporting(true)
+    try {
+      const res = await window.api.ded.importExcel('append')
+      if (res.ok) {
+        toast.success(res.message)
+        reload()
+      } else if (res.message && res.message !== 'Import cancelled.') {
+        toast.error(res.message)
+      }
+    } catch (e) {
+      toast.error(errText(e))
+    } finally {
+      setImporting(false)
+    }
+  }
 
   async function reload(): Promise<void> {
     const [d, n] = await Promise.all([window.api.ded.list(), window.api.wo.names()])
@@ -281,6 +345,27 @@ export default function ManageDeduction(): React.JSX.Element {
           />
         </div>
         <DownloadMenu build={buildDownload} />
+        <button
+          className="btn-ghost !px-2.5"
+          onClick={downloadTemplate}
+          title="Download the deduction import template"
+          aria-label="Download deduction template"
+        >
+          <FileDown className="h-[18px] w-[18px]" />
+        </button>
+        <button
+          className="btn-teal !px-2.5"
+          onClick={importExcel}
+          disabled={importing}
+          title="Import deductions from Excel"
+          aria-label="Import deductions from Excel"
+        >
+          {importing ? (
+            <Loader2 className="h-[18px] w-[18px] animate-spin" />
+          ) : (
+            <Upload className="h-[18px] w-[18px]" />
+          )}
+        </button>
       </div>
 
       {/* TOP: ledger table */}

@@ -71,8 +71,8 @@ function isoDate(v: ExcelJS.CellValue): string {
       return `${y}-${pad(mon)}-${pad(+m[1])}`
     }
   }
-  // dd/mm/yyyy or dd-mm-yyyy
-  m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})$/)
+  // dd/mm/yyyy or dd-mm-yyyy or dd.mm.yyyy
+  m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/)
   if (m) {
     let y = +m[3]
     if (y < 100) y += y < 70 ? 2000 : 1900
@@ -437,4 +437,242 @@ export async function importWorkOrdersFromPath(
   const parts = [`${woInserted} work order${woInserted === 1 ? '' : 's'} imported`]
   if (woSkipped) parts.push(`${woSkipped} skipped (duplicates)`)
   return { ok: true, message: parts.join(', ') + '.', woInserted, woSkipped, filePath }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Work Order master import (the JUNSI "WO" tracking sheet)                   */
+/* -------------------------------------------------------------------------- */
+
+const WOM_ALIASES: Record<string, string[]> = {
+  name_of_work: ['name of work', 'name of the work'],
+  job_location: ['job location', 'location'],
+  work_order_no: ['work order no', 'work order no.', 'work order', 'wo no'],
+  wo_date: ['wo dt', 'wo dt.', 'wo date', 'work order date'],
+  wo_value: ['wo value', 'work order value'],
+  executed_value: ['executed value till date', 'executed value', 'executed value till da'],
+  period_months: ['wo period in months', 'period in months', 'wo period', 'period months'],
+  site_handover_date: ['site hand over dt', 'site hand over dt.', 'site handover date', 'site hand over'],
+  on_site: ['on site', 'onsite']
+}
+
+export async function importWoMaster(
+  win: BrowserWindow | null,
+  mode: 'append' | 'replace' = 'append'
+): Promise<ImportResult> {
+  const picked = await dialog.showOpenDialog(win!, {
+    title: 'Select the Work Order Excel file',
+    filters: [{ name: 'Excel Files', extensions: ['xlsx', 'xlsm'] }],
+    properties: ['openFile']
+  })
+  if (picked.canceled || !picked.filePaths[0]) return { ok: false, message: 'Import cancelled.' }
+  return importWoMasterFromPath(picked.filePaths[0], mode)
+}
+
+export async function importWoMasterFromPath(
+  filePath: string,
+  mode: 'append' | 'replace' = 'append'
+): Promise<ImportResult> {
+  const wb = new ExcelJS.Workbook()
+  try {
+    await wb.xlsx.readFile(filePath)
+  } catch {
+    return { ok: false, message: 'Could not read the file. Please pick a valid .xlsx/.xlsm.' }
+  }
+  const ws = findSheet(wb, 'WO') || wb.worksheets[0]
+  if (!ws) return { ok: false, message: 'The workbook has no sheets.' }
+
+  // Locate the header row (it may not be the first row) and map columns.
+  let headerRow = 0
+  const col: Record<string, number> = {}
+  for (let r = 1; r <= 8 && !headerRow; r++) {
+    const tmp: Record<string, number> = {}
+    ws.getRow(r).eachCell((cell, c) => {
+      const h = normHeader(text(cell.value))
+      if (!h) return
+      for (const key of Object.keys(WOM_ALIASES)) {
+        if (WOM_ALIASES[key].some((a) => normHeader(a) === h)) tmp[key] = c
+      }
+    })
+    if (tmp.work_order_no !== undefined) {
+      headerRow = r
+      Object.assign(col, tmp)
+    }
+  }
+  if (!headerRow) {
+    return { ok: false, message: 'Could not find a "Work Order No" column in the WO sheet.' }
+  }
+
+  const db = getDb()
+  const cid = getActiveCompanyId()
+  let inserted = 0
+  const ins = db.prepare(
+    `INSERT INTO wo_master
+      (company_id, name_of_work, job_location, work_order_no, wo_date, wo_value, executed_value,
+       period_months, site_handover_date, on_site, remarks)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  )
+  const cellOf = (row: ExcelJS.Row, key: string): ExcelJS.CellValue =>
+    col[key] !== undefined ? row.getCell(col[key]).value : null
+
+  const tx = db.transaction(() => {
+    if (mode === 'replace') db.prepare('DELETE FROM wo_master WHERE company_id = ?').run(cid)
+    for (let r = headerRow + 1; r <= ws.rowCount; r++) {
+      const row = ws.getRow(r)
+      const workNo = text(cellOf(row, 'work_order_no'))
+      const name = text(cellOf(row, 'name_of_work'))
+      if (!workNo && !name) continue
+      ins.run(
+        cid,
+        name || null,
+        text(cellOf(row, 'job_location')) || null,
+        workNo,
+        isoDate(cellOf(row, 'wo_date')) || null,
+        num(cellOf(row, 'wo_value')),
+        num(cellOf(row, 'executed_value')),
+        num(cellOf(row, 'period_months')),
+        isoDate(cellOf(row, 'site_handover_date')) || null,
+        text(cellOf(row, 'on_site')) || null,
+        null
+      )
+      inserted++
+    }
+  })
+  tx()
+  return {
+    ok: true,
+    message: `${inserted} work order${inserted === 1 ? '' : 's'} imported.`,
+    woInserted: inserted,
+    filePath
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Deduction ledger import (Manage Deduction)                                */
+/* -------------------------------------------------------------------------- */
+
+export const DED_TEMPLATE_HEADERS = [
+  'Work Order No',
+  'Invoice No',
+  'Deduction Date',
+  'Deduc Rec Date',
+  'Description',
+  'Dr. SD Amt',
+  'Cr. SD Amt',
+  'Dr. PRS Amt',
+  'Cr. PRS Amt',
+  'Dr. HSE Amt',
+  'Cr. HSE Amt',
+  'Create Status',
+  'Name of Work'
+]
+
+const DED_ALIASES: Record<string, string[]> = {
+  work_order_no: ['work order no', 'work order', 'wo no'],
+  invoice_no: ['invoice no', 'inv no', 'invoice'],
+  deduct_date: ['deduction date', 'deduct date'],
+  rec_date: ['deduc rec date', 'rec date', 'received date'],
+  description: ['description', 'remarks'],
+  sd_debit: ['dr. sd amt', 'dr sd amt', 'sd debit', 'sd dr', 'sd (debit)'],
+  sd_credit: ['cr. sd amt', 'cr sd amt', 'sd credit', 'sd cr', 'sd (credit)'],
+  prs_debit: ['dr. prs amt', 'dr prs amt', 'prs debit', 'prs dr', 'prs (debit)'],
+  prs_credit: ['cr. prs amt', 'cr prs amt', 'prs credit', 'prs cr', 'prs (credit)'],
+  hse_debit: ['dr. hse amt', 'dr hse amt', 'hse debit', 'hse dr', 'hse (debit)'],
+  hse_credit: ['cr. hse amt', 'cr hse amt', 'hse credit', 'hse cr', 'hse (credit)'],
+  create_status: ['create status', 'status'],
+  wo_name: ['name of work', 'name of wo', 'wo name', 'name']
+}
+
+export async function importDeductions(
+  win: BrowserWindow | null,
+  mode: 'append' | 'replace' = 'append'
+): Promise<ImportResult> {
+  const picked = await dialog.showOpenDialog(win!, {
+    title: 'Select the Deduction Excel file',
+    filters: [{ name: 'Excel Files', extensions: ['xlsx', 'xlsm'] }],
+    properties: ['openFile']
+  })
+  if (picked.canceled || !picked.filePaths[0]) return { ok: false, message: 'Import cancelled.' }
+  return importDeductionsFromPath(picked.filePaths[0], mode)
+}
+
+export async function importDeductionsFromPath(
+  filePath: string,
+  mode: 'append' | 'replace' = 'append'
+): Promise<ImportResult> {
+  const wb = new ExcelJS.Workbook()
+  try {
+    await wb.xlsx.readFile(filePath)
+  } catch {
+    return { ok: false, message: 'Could not read the file. Please pick a valid .xlsx/.xlsm.' }
+  }
+  const ws = findSheet(wb, 'Deduction') || findSheet(wb, 'Deductions') || wb.worksheets[0]
+  if (!ws) return { ok: false, message: 'The workbook has no sheets.' }
+
+  let headerRow = 0
+  const col: Record<string, number> = {}
+  for (let r = 1; r <= 8 && !headerRow; r++) {
+    const tmp: Record<string, number> = {}
+    ws.getRow(r).eachCell((cell, c) => {
+      const h = normHeader(text(cell.value))
+      if (!h) return
+      for (const key of Object.keys(DED_ALIASES)) {
+        if (DED_ALIASES[key].some((a) => normHeader(a) === h)) tmp[key] = c
+      }
+    })
+    if (tmp.work_order_no !== undefined) {
+      headerRow = r
+      Object.assign(col, tmp)
+    }
+  }
+  if (!headerRow) {
+    return { ok: false, message: 'Could not find a "Work Order No" column. Use the template format.' }
+  }
+
+  const db = getDb()
+  const cid = getActiveCompanyId()
+  let inserted = 0
+  const ins = db.prepare(
+    `INSERT INTO deductions
+      (company_id, fin_year, work_order_no, invoice_no, deduct_date, rec_date, description,
+       hse_debit, hse_credit, prs_debit, prs_credit, sd_debit, sd_credit, create_status, wo_name)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  )
+  const cellOf = (row: ExcelJS.Row, key: string): ExcelJS.CellValue =>
+    col[key] !== undefined ? row.getCell(col[key]).value : null
+
+  const tx = db.transaction(() => {
+    if (mode === 'replace') db.prepare('DELETE FROM deductions WHERE company_id = ?').run(cid)
+    for (let r = headerRow + 1; r <= ws.rowCount; r++) {
+      const row = ws.getRow(r)
+      const workNo = text(cellOf(row, 'work_order_no'))
+      const invNo = text(cellOf(row, 'invoice_no'))
+      if (!workNo && !invNo) continue
+      const deductDate = isoDate(cellOf(row, 'deduct_date')) || null
+      ins.run(
+        cid,
+        finYearFromIso(deductDate || ''),
+        workNo,
+        invNo,
+        deductDate,
+        isoDate(cellOf(row, 'rec_date')) || null,
+        text(cellOf(row, 'description')) || null,
+        num(cellOf(row, 'hse_debit')),
+        num(cellOf(row, 'hse_credit')),
+        num(cellOf(row, 'prs_debit')),
+        num(cellOf(row, 'prs_credit')),
+        num(cellOf(row, 'sd_debit')),
+        num(cellOf(row, 'sd_credit')),
+        text(cellOf(row, 'create_status')) || 'Manual',
+        text(cellOf(row, 'wo_name')) || null
+      )
+      inserted++
+    }
+  })
+  tx()
+  return {
+    ok: true,
+    message: `${inserted} deduction entr${inserted === 1 ? 'y' : 'ies'} imported.`,
+    dedInserted: inserted,
+    filePath
+  }
 }

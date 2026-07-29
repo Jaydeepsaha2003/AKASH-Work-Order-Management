@@ -16,6 +16,13 @@ const api = {
     importExcel: (mode: 'append' | 'replace') =>
       ipcRenderer.invoke('wo:importExcel', { mode })
   },
+  wom: {
+    list: () => ipcRenderer.invoke('wom:list'),
+    create: (values: unknown) => ipcRenderer.invoke('wom:create', values),
+    update: (values: unknown) => ipcRenderer.invoke('wom:update', values),
+    remove: (id: number) => ipcRenderer.invoke('wom:delete', { id }),
+    importExcel: (mode: 'append' | 'replace') => ipcRenderer.invoke('wom:importExcel', { mode })
+  },
   inv: {
     save: (values: unknown) => ipcRenderer.invoke('inv:save', values),
     update: (values: unknown) => ipcRenderer.invoke('inv:update', values)
@@ -27,7 +34,8 @@ const api = {
     remove: (id: number) => ipcRenderer.invoke('ded:delete', { id }),
     checkDup: (fin_year: string, work_order_no: string, invoice_no: string) =>
       ipcRenderer.invoke('ded:checkDup', { fin_year, work_order_no, invoice_no }),
-    outstanding: () => ipcRenderer.invoke('ded:outstanding')
+    outstanding: () => ipcRenderer.invoke('ded:outstanding'),
+    importExcel: (mode: 'append' | 'replace') => ipcRenderer.invoke('ded:importExcel', { mode })
   },
   excel: {
     export: (req: unknown) => ipcRenderer.invoke('excel:export', req),

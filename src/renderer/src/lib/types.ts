@@ -51,6 +51,23 @@ export interface WoListItem {
   wo_name: string | null
 }
 
+// Work Order master record (tracking sheet) — separate from invoice work orders
+export interface WoMaster {
+  id: number
+  name_of_work: string | null
+  job_location: string | null
+  work_order_no: string
+  wo_date: string | null
+  wo_value: number
+  executed_value: number
+  period_months: number
+  site_handover_date: string | null
+  on_site: string | null
+  remarks: string | null
+}
+
+export type WoMasterInput = Omit<WoMaster, 'id'>
+
 export interface OutstandingRow {
   work_order_no: string
   wo_name: string | null
@@ -90,6 +107,7 @@ export interface ActivityRow {
 
 export type Page =
   | 'dashboard'
+  | 'workorder'
   | 'create'
   | 'invoice'
   | 'view'
