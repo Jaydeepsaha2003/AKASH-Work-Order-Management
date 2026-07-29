@@ -52,6 +52,7 @@ const api = {
       files: { filename: string; originalName: string }[]
     }) => ipcRenderer.invoke('attach:sync', input),
     list: (input: { scope: string; refKey: string }) => ipcRenderer.invoke('attach:list', input),
+    listScope: (input: { scope: string }) => ipcRenderer.invoke('attach:listScope', input),
     open: (filename: string) => ipcRenderer.invoke('attach:open', { filename })
   },
   update: {

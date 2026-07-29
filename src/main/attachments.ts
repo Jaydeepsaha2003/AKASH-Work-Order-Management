@@ -77,6 +77,13 @@ export function listAttachments(input: { scope: string; refKey: string }): Attac
     .all(getActiveCompanyId(), input.scope, input.refKey) as Attachment[]
 }
 
+// All attachments for a scope (used to show a PDF icon on each data row)
+export function listAttachmentsByScope(input: { scope: string }): Attachment[] {
+  return getDb()
+    .prepare('SELECT * FROM attachments WHERE company_id = ? AND scope = ? ORDER BY id ASC')
+    .all(getActiveCompanyId(), input.scope) as Attachment[]
+}
+
 // Reconcile the stored attachments for a record with the provided list:
 // insert new files, delete removed ones (and their files on disk).
 export function syncAttachments(input: {

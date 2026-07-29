@@ -21,8 +21,11 @@ import {
   Select,
   Segmented,
   DataTable,
+  AttachmentBar,
+  AttachIconButton,
   cn,
-  type Column
+  type Column,
+  type FileRef
 } from '../components/ui'
 import { formatAmt, formatDate, toNum, todayISO, errText, fail } from '../lib/format'
 import DownloadMenu from '../components/DownloadMenu'
@@ -100,9 +103,15 @@ export default function CreateWorkOrder(): React.JSX.Element {
   const [importing, setImporting] = useState(false)
   // executed value per work order = sum of matched invoices' basic value
   const [execMap, setExecMap] = useState<Record<string, number>>({})
+  const [attachments, setAttachments] = useState<FileRef[]>([])
+  const [attachMap, setAttachMap] = useState<Record<string, FileRef[]>>({})
 
   async function reload(): Promise<void> {
-    const [list, invoices] = await Promise.all([window.api.wom.list(), window.api.wo.list()])
+    const [list, invoices, attach] = await Promise.all([
+      window.api.wom.list(),
+      window.api.wo.list(),
+      window.api.attach.listScope({ scope: 'womaster' })
+    ])
     setRows(list)
     const map: Record<string, number> = {}
     for (const inv of invoices) {
@@ -111,6 +120,11 @@ export default function CreateWorkOrder(): React.JSX.Element {
       map[k] = (map[k] || 0) + (inv.gross_value || 0)
     }
     setExecMap(map)
+    const am: Record<string, FileRef[]> = {}
+    for (const a of attach) {
+      ;(am[a.ref_key] ||= []).push({ filename: a.filename, originalName: a.original_name || a.filename })
+    }
+    setAttachMap(am)
   }
 
   async function importExcel(): Promise<void> {
@@ -196,6 +210,7 @@ export default function CreateWorkOrder(): React.JSX.Element {
   function clear(): void {
     setForm({ ...blank, wo_date: todayISO() })
     setEditId(null)
+    setAttachments([])
   }
 
   function payload(): Parameters<typeof window.api.wom.create>[0] {
@@ -223,6 +238,11 @@ export default function CreateWorkOrder(): React.JSX.Element {
         ? await window.api.wom.update({ ...payload(), id: editId })
         : await window.api.wom.create(payload())
       if (res.ok) {
+        await window.api.attach.sync({
+          scope: 'womaster',
+          refKey: form.work_order_no.trim(),
+          files: attachments
+        })
         toast.success(res.message)
         clear()
         reload()
@@ -247,6 +267,11 @@ export default function CreateWorkOrder(): React.JSX.Element {
       on_site: r.on_site || 'In Process',
       remarks: r.remarks || ''
     })
+    window.api.attach
+      .list({ scope: 'womaster', refKey: r.work_order_no })
+      .then((list) =>
+        setAttachments(list.map((a) => ({ filename: a.filename, originalName: a.original_name || a.filename })))
+      )
     window.scrollTo?.({ top: 9999 })
   }
 
@@ -484,6 +509,7 @@ export default function CreateWorkOrder(): React.JSX.Element {
           onRowDoubleClick={(_i, r) => beginEdit(r)}
           rowActions={(r) => (
             <div className="flex items-center justify-center gap-1">
+              <AttachIconButton files={attachMap[r.work_order_no]} />
               <button
                 title="Edit"
                 onClick={() => beginEdit(r)}
@@ -577,7 +603,11 @@ export default function CreateWorkOrder(): React.JSX.Element {
             <TextInput value={form.remarks} onChange={(e) => set('remarks', e.target.value)} />
           </Field>
 
-          <div className="flex items-end gap-2">
+          <div className="border-t border-slate-200 pt-2 sm:col-span-2 lg:col-span-4">
+            <AttachmentBar files={attachments} onChange={setAttachments} />
+          </div>
+
+          <div className="flex items-end gap-2 lg:col-span-2">
             <button className={editId ? 'btn-primary flex-1' : 'btn-green flex-1'} onClick={save}>
               {editId ? <RefreshCw className="h-4 w-4" /> : <Save className="h-4 w-4" />}
               {editId ? 'Update' : 'Save'}

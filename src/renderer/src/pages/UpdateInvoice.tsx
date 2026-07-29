@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Save, Eraser, MousePointerClick, FilePlus2, Search, ReceiptText } from 'lucide-react'
 import type { WorkOrder } from '../lib/types'
-import { Field, TextInput, NumberInput, DateInput, DataTable, AttachmentBar, type Column, type FileRef } from '../components/ui'
+import { Field, TextInput, NumberInput, DateInput, DataTable, AttachmentBar, AttachIconButton, type Column, type FileRef } from '../components/ui'
 import { formatAmt, formatDate, financialYear, toNum, todayISO, errText, fail } from '../lib/format'
 import { StatusBadge } from './CreateWO'
 
@@ -33,9 +33,19 @@ export default function UpdateInvoice(): React.JSX.Element {
   const [recDate, setRecDate] = useState(todayISO())
   const [ded, setDed] = useState({ ...blankDed })
   const [attachments, setAttachments] = useState<FileRef[]>([])
+  const [attachMap, setAttachMap] = useState<Record<string, FileRef[]>>({})
 
   async function reload(): Promise<void> {
-    setRows(await window.api.wo.list())
+    const [list, attach] = await Promise.all([
+      window.api.wo.list(),
+      window.api.attach.listScope({ scope: 'wo' })
+    ])
+    setRows(list)
+    const map: Record<string, FileRef[]> = {}
+    for (const a of attach) {
+      ;(map[a.ref_key] ||= []).push({ filename: a.filename, originalName: a.original_name || a.filename })
+    }
+    setAttachMap(map)
   }
   useEffect(() => {
     reload()
@@ -209,13 +219,16 @@ export default function UpdateInvoice(): React.JSX.Element {
           onSelect={(i) => setSel(i)}
           actionsHeader="Action"
           rowActions={(r) => (
-            <button
-              title="Load for invoice entry"
-              onClick={() => pick(r)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-brand-700 active:scale-95"
-            >
-              <FilePlus2 className="h-4 w-4" /> Load
-            </button>
+            <div className="flex items-center justify-center gap-1.5">
+              <AttachIconButton files={attachMap[rk(r.fin_year, r.work_order_no, r.invoice_no)]} />
+              <button
+                title="Load for invoice entry"
+                onClick={() => pick(r)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-brand-700 active:scale-95"
+              >
+                <FilePlus2 className="h-4 w-4" /> Load
+              </button>
+            </div>
           )}
         />
       </div>

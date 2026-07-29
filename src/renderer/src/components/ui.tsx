@@ -8,7 +8,8 @@ import {
   CalendarDays,
   X,
   Paperclip,
-  FileText
+  FileText,
+  Eye
 } from 'lucide-react'
 import { formatDate, toISODate, formatAmt } from '../lib/format'
 
@@ -58,22 +59,25 @@ export function AttachmentBar({
           {files.map((f) => (
             <span
               key={f.filename}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[13px]"
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white py-1 pl-2.5 pr-1 text-[13px]"
             >
+              <FileText className="h-3.5 w-3.5 shrink-0 text-rose-500" />
+              <span className="max-w-[180px] truncate font-medium text-slate-700">
+                {f.originalName}
+              </span>
               <button
                 type="button"
-                title="Open PDF"
+                title="View PDF"
                 onClick={() => window.api.attach.open(f.filename)}
-                className="inline-flex items-center gap-1 font-medium text-slate-700 hover:text-brand-700"
+                className="ml-1 inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-0.5 text-[12px] font-semibold text-brand-700 transition hover:bg-brand-100"
               >
-                <FileText className="h-3.5 w-3.5 text-rose-500" />
-                <span className="max-w-[180px] truncate">{f.originalName}</span>
+                <Eye className="h-3.5 w-3.5" /> View
               </button>
               <button
                 type="button"
                 title="Remove"
                 onClick={() => onChange(files.filter((x) => x.filename !== f.filename))}
-                className="text-slate-400 transition hover:text-rose-600"
+                className="rounded-md p-0.5 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -82,6 +86,30 @@ export function AttachmentBar({
         </div>
       )}
     </div>
+  )
+}
+
+// Small PDF icon for a table row — opens the row's attached PDF(s). Renders
+// nothing when the row has no attachments.
+export function AttachIconButton({ files }: { files?: FileRef[] }): React.JSX.Element | null {
+  if (!files || files.length === 0) return null
+  return (
+    <button
+      type="button"
+      title={`View ${files.length} PDF${files.length > 1 ? 's' : ''}`}
+      onClick={(e) => {
+        e.stopPropagation()
+        files.forEach((f) => window.api.attach.open(f.filename))
+      }}
+      className="relative flex h-6 w-6 items-center justify-center rounded-md text-rose-600 transition hover:bg-rose-100"
+    >
+      <FileText className="h-4 w-4" />
+      {files.length > 1 && (
+        <span className="absolute -right-1 -top-1 min-w-[14px] rounded-full bg-rose-600 px-1 text-center text-[9px] font-bold leading-[14px] text-white">
+          {files.length}
+        </span>
+      )}
+    </button>
   )
 }
 

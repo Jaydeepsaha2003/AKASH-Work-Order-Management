@@ -18,7 +18,13 @@ import {
 import { verifyLogin, changePassword } from './auth'
 import { exportToExcel, saveBinaryFile, type ExportRequest } from './exporter'
 import { importExcel, importWorkOrders, importWoMaster, importDeductions } from './importexcel'
-import { uploadPdfs, syncAttachments, listAttachments, openAttachment } from './attachments'
+import {
+  uploadPdfs,
+  syncAttachments,
+  listAttachments,
+  listAttachmentsByScope,
+  openAttachment
+} from './attachments'
 import { listWoMaster, createWoMaster, updateWoMaster, deleteWoMaster } from './womaster'
 import { backupDatabase, restoreDatabase } from './backup'
 import {
@@ -166,6 +172,7 @@ export function registerIpc(): void {
     syncAttachments(a)
   )
   handle('attach:list', (a: { scope: string; refKey: string }) => listAttachments(a))
+  handle('attach:listScope', (a: { scope: string }) => listAttachmentsByScope(a))
   handle('attach:open', (a: { filename: string }) => openAttachment(a))
 
   // Companies (multi-tenant)

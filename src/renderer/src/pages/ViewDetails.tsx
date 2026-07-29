@@ -10,12 +10,18 @@ import {
   Field,
   TextInput,
   NumberInput,
-  type Column
+  AttachmentBar,
+  AttachIconButton,
+  type Column,
+  type FileRef
 } from '../components/ui'
 import { formatAmt, formatDate, toNum, todayISO, errText, fail } from '../lib/format'
 import DownloadMenu from '../components/DownloadMenu'
 import type { DownloadPayload } from '../lib/download'
 import { StatusBadge } from './CreateWO'
+
+// stable key that ties attachments to a work-order/invoice record
+const rk = (fy: string, wo: string, inv: string): string => [fy, wo, inv].join('::')
 
 const blankEdit = {
   work_order_no: '',
@@ -112,9 +118,20 @@ export default function ViewDetails(): React.JSX.Element {
   const [form, setForm] = useState({ ...blankEdit })
   const [woStatus, setWoStatus] = useState('Created')
   const [cancelRemarks, setCancelRemarks] = useState('')
+  const [attachments, setAttachments] = useState<FileRef[]>([])
+  const [attachMap, setAttachMap] = useState<Record<string, FileRef[]>>({})
 
   async function reload(): Promise<void> {
-    setRows(await window.api.wo.list())
+    const [list, attach] = await Promise.all([
+      window.api.wo.list(),
+      window.api.attach.listScope({ scope: 'wo' })
+    ])
+    setRows(list)
+    const map: Record<string, FileRef[]> = {}
+    for (const a of attach) {
+      ;(map[a.ref_key] ||= []).push({ filename: a.filename, originalName: a.original_name || a.filename })
+    }
+    setAttachMap(map)
   }
   useEffect(() => {
     reload()
@@ -147,6 +164,11 @@ export default function ViewDetails(): React.JSX.Element {
       gst_amt: String(r.gst_on_gross ?? ''),
       wo_name: r.wo_name || ''
     })
+    window.api.attach
+      .list({ scope: 'wo', refKey: rk(r.fin_year, r.work_order_no, r.invoice_no) })
+      .then((list) =>
+        setAttachments(list.map((a) => ({ filename: a.filename, originalName: a.original_name || a.filename })))
+      )
   }
 
   function setF<K extends keyof typeof form>(k: K, v: (typeof form)[K]): void {
@@ -173,6 +195,11 @@ export default function ViewDetails(): React.JSX.Element {
         cancel_remarks: cancelRemarks || null
       })
       if (res.ok) {
+        await window.api.attach.sync({
+          scope: 'wo',
+          refKey: rk(editing.fin_year, form.work_order_no, form.invoice_no.trim()),
+          files: attachments
+        })
         toast.success(res.message)
         setEditing(null)
         reload()
@@ -355,13 +382,16 @@ export default function ViewDetails(): React.JSX.Element {
           showTotals
           onRowDoubleClick={(_i, r) => beginEdit(r)}
           rowActions={(r) => (
-            <button
-              title="Edit invoice"
-              onClick={() => beginEdit(r)}
-              className="flex h-6 w-6 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
+            <div className="flex items-center justify-center gap-1">
+              <AttachIconButton files={attachMap[rk(r.fin_year, r.work_order_no, r.invoice_no)]} />
+              <button
+                title="Edit invoice"
+                onClick={() => beginEdit(r)}
+                className="flex h-6 w-6 items-center justify-center rounded-md text-brand-600 transition hover:bg-brand-100"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            </div>
           )}
         />
       </div>
@@ -462,6 +492,9 @@ export default function ViewDetails(): React.JSX.Element {
               />
             </Field>
           )}
+          <div className="border-t border-slate-200 pt-2 sm:col-span-2 lg:col-span-3">
+            <AttachmentBar files={attachments} onChange={setAttachments} />
+          </div>
         </div>
       </Modal>
     </div>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Save, Eraser, RefreshCw, Trash2, Pencil, Scale, Search, Upload, FileDown, Loader2 } from 'lucide-react'
 import type { Deduction, WoListItem } from '../lib/types'
-import { Field, TextInput, NumberInput, DateInput, EditableCombo, Select, DataTable, AttachmentBar, type Column, type FileRef } from '../components/ui'
+import { Field, TextInput, NumberInput, DateInput, EditableCombo, Select, DataTable, AttachmentBar, AttachIconButton, type Column, type FileRef } from '../components/ui'
 import { formatAmt, formatDate, financialYear, toNum, todayISO, errText, fail } from '../lib/format'
 
 // stable key that ties attachments to a deduction record
@@ -99,10 +99,21 @@ export default function ManageDeduction(): React.JSX.Element {
     }
   }
 
+  const [attachMap, setAttachMap] = useState<Record<string, FileRef[]>>({})
+
   async function reload(): Promise<void> {
-    const [d, n] = await Promise.all([window.api.ded.list(), window.api.wo.names()])
+    const [d, n, attach] = await Promise.all([
+      window.api.ded.list(),
+      window.api.wo.names(),
+      window.api.attach.listScope({ scope: 'deduction' })
+    ])
     setRows(d)
     setNames(n)
+    const map: Record<string, FileRef[]> = {}
+    for (const a of attach) {
+      ;(map[a.ref_key] ||= []).push({ filename: a.filename, originalName: a.original_name || a.filename })
+    }
+    setAttachMap(map)
   }
   useEffect(() => {
     reload()
@@ -382,6 +393,7 @@ export default function ManageDeduction(): React.JSX.Element {
           onSelect={(i) => setSel(i)}
           rowActions={(r) => (
             <div className="flex items-center justify-center gap-1">
+              <AttachIconButton files={attachMap[rk(r.fin_year, r.work_order_no, r.invoice_no)]} />
               <button
                 title="Edit"
                 onClick={() => loadRow(r)}

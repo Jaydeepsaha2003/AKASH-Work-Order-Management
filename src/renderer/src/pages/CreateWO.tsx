@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Save, Eraser, Pencil, RefreshCw, Trash2, CalendarDays, CalendarRange, FilePlus2, Search, Upload, FileDown, Loader2 } from 'lucide-react'
 import type { WorkOrder } from '../lib/types'
-import { Field, TextInput, NumberInput, DateInput, DataTable, Select, EditableCombo, AttachmentBar, type Column, type FileRef } from '../components/ui'
+import { Field, TextInput, NumberInput, DateInput, DataTable, Select, EditableCombo, AttachmentBar, AttachIconButton, type Column, type FileRef } from '../components/ui'
 import DownloadMenu from '../components/DownloadMenu'
 import type { DownloadPayload } from '../lib/download'
 import {
@@ -69,12 +69,22 @@ export default function CreateWO(): React.JSX.Element {
   const [cancelRemarks, setCancelRemarks] = useState('')
   const [importing, setImporting] = useState(false)
   const [attachments, setAttachments] = useState<FileRef[]>([])
+  const [attachMap, setAttachMap] = useState<Record<string, FileRef[]>>({})
 
   async function reload(): Promise<void> {
-    const [list, nm] = await Promise.all([window.api.wo.list(), window.api.wo.names()])
+    const [list, nm, attach] = await Promise.all([
+      window.api.wo.list(),
+      window.api.wo.names(),
+      window.api.attach.listScope({ scope: 'wo' })
+    ])
     setRows(list)
     setNames(nm.map((n) => n.work_order_no))
     setWoNameMap(Object.fromEntries(nm.map((n) => [n.work_order_no, n.wo_name || ''])))
+    const map: Record<string, FileRef[]> = {}
+    for (const a of attach) {
+      ;(map[a.ref_key] ||= []).push({ filename: a.filename, originalName: a.original_name || a.filename })
+    }
+    setAttachMap(map)
   }
   useEffect(() => {
     reload()
@@ -536,6 +546,7 @@ export default function CreateWO(): React.JSX.Element {
             onRowDoubleClick={(_i, r) => beginEdit(r)}
             rowActions={(r) => (
               <div className="flex items-center justify-center gap-1">
+                <AttachIconButton files={attachMap[rk(r.fin_year, r.work_order_no, r.invoice_no)]} />
                 <button
                   title="Edit"
                   onClick={() => beginEdit(r)}

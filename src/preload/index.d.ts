@@ -93,6 +93,7 @@ export interface Api {
     upload: () => Promise<Res & { files?: FileRef[] }>
     sync: (input: { scope: string; refKey: string; files: FileRef[] }) => Promise<Res>
     list: (input: { scope: string; refKey: string }) => Promise<Attachment[]>
+    listScope: (input: { scope: string }) => Promise<Attachment[]>
     open: (filename: string) => Promise<Res>
   }
   update: {
