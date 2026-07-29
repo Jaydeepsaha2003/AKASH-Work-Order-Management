@@ -67,7 +67,8 @@ function daysFromToday(iso: string): number | null {
 type WoRow = WoMaster & {
   sl: number
   balance_value: number
-  completion_date: string
+  actual_completion: string
+  revised_completion: string
   balance_days: number | null
   days_consumed: number | null
   status: 'Running' | 'Expired' | '—'
@@ -135,10 +136,13 @@ export default function CreateWorkOrder(): React.JSX.Element {
   // enrich every row with the computed columns
   const enriched = useMemo<WoRow[]>(() => {
     return rows.map((r, i) => {
-      // completion is measured from the revised handover date when present
-      const effectiveHandover = r.revised_handover_date || r.site_handover_date
-      const completion_date = completionISO(effectiveHandover, r.period_months, r.period_unit)
-      const balance_days = completion_date ? daysFromToday(completion_date) : null
+      const actual_completion = completionISO(r.site_handover_date, r.period_months, r.period_unit)
+      const revised_completion = r.revised_handover_date
+        ? completionISO(r.revised_handover_date, r.period_months, r.period_unit)
+        : ''
+      // balance days count against the revised completion when present, else actual
+      const effectiveCompletion = revised_completion || actual_completion
+      const balance_days = effectiveCompletion ? daysFromToday(effectiveCompletion) : null
       const consumed = r.site_handover_date ? daysFromToday(r.site_handover_date) : null
       const executed = execMap[r.work_order_no] ?? 0 // always from matched invoices
       const status: WoRow['status'] =
@@ -148,7 +152,8 @@ export default function CreateWorkOrder(): React.JSX.Element {
         sl: i + 1,
         executed_value: executed,
         balance_value: (r.wo_value || 0) - executed,
-        completion_date,
+        actual_completion,
+        revised_completion,
         balance_days,
         days_consumed: consumed === null ? null : -consumed,
         status
@@ -270,12 +275,13 @@ export default function CreateWorkOrder(): React.JSX.Element {
         'Work Order No',
         'WO Date',
         'WO Value',
-        'Executed Value',
-        'Balance Value',
-        'Period',
-        'Site Handover',
-        'Revised Handover',
-        'Completion Date',
+        'Executed WO Value',
+        'Balance WO Value',
+        'Completion Period',
+        'Actual Site Handover',
+        'Revised Site Handover',
+        'Actual Completion Date',
+        'Revised Completion Date',
         'Balance Days',
         'Status',
         'On Site',
@@ -293,7 +299,8 @@ export default function CreateWorkOrder(): React.JSX.Element {
         `${r.period_months || 0} ${r.period_unit || 'Months'}`,
         formatDate(r.site_handover_date),
         formatDate(r.revised_handover_date),
-        formatDate(r.completion_date),
+        formatDate(r.actual_completion),
+        formatDate(r.revised_completion),
         r.balance_days ?? '',
         r.status,
         r.on_site || '',
@@ -304,17 +311,18 @@ export default function CreateWorkOrder(): React.JSX.Element {
   }
 
   const columns: Column<WoRow>[] = [
-    { key: 'sl', header: 'SL', width: 46, tabular: true, align: 'right', light: true },
-    { key: 'name_of_work', header: 'Name of Work', width: 240, wrap: true, render: (r) => r.name_of_work || '' },
-    { key: 'job_location', header: 'Job Location', width: 130, wrap: true, light: true, render: (r) => r.job_location || '' },
-    { key: 'work_order_no', header: 'Work Order', width: 100, tabular: true },
-    { key: 'wo_date', header: 'WO Dt', width: 92, tabular: true, light: true, render: (r) => formatDate(r.wo_date) },
-    { key: 'wo_value', header: 'WO Value', width: 120, numeric: true, render: (r) => formatAmt(r.wo_value) },
-    { key: 'executed_value', header: 'Executed', width: 120, numeric: true, render: (r) => formatAmt(r.executed_value) },
+    { key: 'sl', header: 'SL', width: 50, wrap: true, tabular: true, align: 'right' },
+    { key: 'name_of_work', header: 'Name of Work', width: 210, wrap: true, render: (r) => r.name_of_work || '' },
+    { key: 'job_location', header: 'Job Location', width: 120, wrap: true, render: (r) => r.job_location || '' },
+    { key: 'work_order_no', header: 'Work Order No', width: 100, wrap: true, tabular: true },
+    { key: 'wo_date', header: 'WO Date', width: 92, wrap: true, tabular: true, render: (r) => formatDate(r.wo_date) },
+    { key: 'wo_value', header: 'WO Value', width: 118, wrap: true, numeric: true, render: (r) => formatAmt(r.wo_value) },
+    { key: 'executed_value', header: 'Executed WO Value', width: 118, wrap: true, numeric: true, render: (r) => formatAmt(r.executed_value) },
     {
       key: 'balance_value',
-      header: 'Balance',
-      width: 120,
+      header: 'Balance WO Value',
+      width: 118,
+      wrap: true,
       numeric: true,
       render: (r) => (
         <span className={r.balance_value < 0 ? 'text-rose-600' : 'text-slate-800'}>
@@ -322,50 +330,54 @@ export default function CreateWorkOrder(): React.JSX.Element {
         </span>
       )
     },
-    { key: 'period_months', header: 'Period', width: 92, tabular: true, align: 'right', light: true, render: (r) => `${r.period_months || 0} ${unitShort(r.period_unit)}` },
-    { key: 'site_handover_date', header: 'Handover', width: 92, tabular: true, light: true, render: (r) => formatDate(r.site_handover_date) },
+    { key: 'period_months', header: 'Completion Period', width: 100, wrap: true, tabular: true, align: 'right', render: (r) => `${r.period_months || 0} ${unitShort(r.period_unit)}` },
+    { key: 'site_handover_date', header: 'Actual Site Handover', width: 100, wrap: true, tabular: true, render: (r) => formatDate(r.site_handover_date) },
     {
       key: 'revised_handover_date',
-      header: 'Revised H/O',
-      width: 96,
+      header: 'Revised Site Handover',
+      width: 100,
+      wrap: true,
       tabular: true,
-      light: true,
       render: (r) =>
         r.revised_handover_date ? (
-          <span className="font-semibold text-amber-600">{formatDate(r.revised_handover_date)}</span>
+          <span className="text-amber-600">{formatDate(r.revised_handover_date)}</span>
         ) : (
           '—'
         )
     },
-    { key: 'completion_date', header: 'Completion', width: 92, tabular: true, light: true, render: (r) => formatDate(r.completion_date) },
+    { key: 'actual_completion', header: 'Actual Completion Date', width: 100, wrap: true, tabular: true, render: (r) => formatDate(r.actual_completion) },
+    {
+      key: 'revised_completion',
+      header: 'Revised Completion Date',
+      width: 100,
+      wrap: true,
+      tabular: true,
+      render: (r) =>
+        r.revised_completion ? (
+          <span className="text-amber-600">{formatDate(r.revised_completion)}</span>
+        ) : (
+          '—'
+        )
+    },
     {
       key: 'balance_days',
-      header: 'Bal Days',
-      width: 78,
+      header: 'Balance Days',
+      width: 84,
+      wrap: true,
       align: 'right',
       tabular: true,
       render: (r) =>
         r.balance_days === null ? (
           '—'
         ) : (
-          <span className={r.balance_days < 0 ? 'font-semibold text-rose-600' : 'font-semibold text-emerald-600'}>
+          <span className={r.balance_days < 0 ? 'text-rose-600' : 'text-emerald-600'}>
             {r.balance_days}
           </span>
         )
     },
-    {
-      key: 'status',
-      header: 'Status',
-      width: 90,
-      render: (r) => <StatusPill status={r.status} />
-    },
-    {
-      key: 'on_site',
-      header: 'On Site',
-      width: 104,
-      render: (r) => <OnSitePill value={r.on_site} />
-    },
-    { key: 'days_consumed', header: 'Days Used', width: 82, align: 'right', tabular: true, render: (r) => (r.days_consumed ?? '—') }
+    { key: 'status', header: 'Status', width: 92, wrap: true, render: (r) => <StatusPill status={r.status} /> },
+    { key: 'on_site', header: 'On Site', width: 104, wrap: true, render: (r) => <OnSitePill value={r.on_site} /> },
+    { key: 'days_consumed', header: 'Days Consumed', width: 90, wrap: true, align: 'right', tabular: true, render: (r) => (r.days_consumed ?? '—') }
   ]
 
   return (
@@ -466,8 +478,9 @@ export default function CreateWorkOrder(): React.JSX.Element {
         <DataTable
           columns={columns}
           rows={filtered}
-          minWidth={1820}
+          minWidth={1900}
           showTotals
+          uniformText
           onRowDoubleClick={(_i, r) => beginEdit(r)}
           rowActions={(r) => (
             <div className="flex items-center justify-center gap-1">

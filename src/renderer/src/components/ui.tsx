@@ -566,7 +566,8 @@ export function DataTable<T>({
   defaultSortDir = 'asc',
   defaultSort,
   showTotals = false,
-  totalsLabel = 'TOTAL'
+  totalsLabel = 'TOTAL',
+  uniformText = false
 }: {
   columns: Column<T>[]
   rows: T[]
@@ -587,6 +588,8 @@ export function DataTable<T>({
   // render a pinned bottom row with column-wise sums of all numeric columns
   showTotals?: boolean
   totalsLabel?: string
+  // headers use the body font size, wrap, and every cell is bold (ignores `light`)
+  uniformText?: boolean
 }): React.JSX.Element {
   const rowBg = (i: number): string =>
     selectedIndex === i ? 'bg-brand-100' : i % 2 ? 'bg-brand-50' : 'bg-white'
@@ -668,7 +671,10 @@ export function DataTable<T>({
                   key={c.key}
                   onClick={() => toggleSort(c.key)}
                   title="Click to sort"
-                  className="cursor-pointer select-none whitespace-nowrap border-l border-white/15 px-3 py-2.5 font-heading text-[13.5px] font-semibold transition first:border-l-0 hover:bg-white/10"
+                  className={cn(
+                    'cursor-pointer select-none border-l border-white/15 px-3 py-2.5 font-heading font-semibold transition first:border-l-0 hover:bg-white/10',
+                    uniformText ? 'whitespace-normal align-bottom text-[15px]' : 'whitespace-nowrap text-[13.5px]'
+                  )}
                   style={{ width: c.width, textAlign: c.align ?? (c.numeric ? 'right' : 'left') }}
                 >
                   <span
@@ -722,7 +728,7 @@ export function DataTable<T>({
                   className={cn(
                     'border-l border-slate-200 px-3 py-1.5 text-slate-700 transition-colors first:border-l-0 group-hover:bg-brand-50/60',
                     c.wrap ? 'whitespace-normal align-top leading-snug' : 'whitespace-nowrap',
-                    c.light ? 'font-medium' : 'font-semibold',
+                    c.light && !uniformText ? 'font-medium' : 'font-semibold',
                     (c.numeric || c.tabular) && 'tabular'
                   )}
                   style={{
