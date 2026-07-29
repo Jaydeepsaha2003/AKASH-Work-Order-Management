@@ -130,6 +130,21 @@ export function syncAttachments(input: {
 export function openAttachment(input: { filename: string }): Res {
   const p = join(uploadsDir(), input.filename)
   if (!existsSync(p)) return { ok: false, message: 'File not found in uploads folder.' }
-  shell.openPath(p)
-  return { ok: true, message: 'Opened.' }
+  // Open inside the app (Electron's built-in Chromium PDF viewer) so it works
+  // regardless of the user's default PDF/browser association.
+  try {
+    const win = new BrowserWindow({
+      width: 1100,
+      height: 850,
+      title: input.filename,
+      autoHideMenuBar: true,
+      webPreferences: { plugins: true }
+    })
+    win.loadFile(p)
+    return { ok: true, message: 'Opened.' }
+  } catch {
+    // fall back to the OS default handler
+    shell.openPath(p)
+    return { ok: true, message: 'Opened.' }
+  }
 }
