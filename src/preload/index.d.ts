@@ -22,6 +22,21 @@ export interface ExportRequest {
 
 type Res = { ok: boolean; message: string }
 
+export interface Attachment {
+  id: number
+  company_id: number
+  scope: string
+  ref_key: string
+  filename: string
+  original_name: string | null
+  created_at: string
+}
+
+export interface FileRef {
+  filename: string
+  originalName: string
+}
+
 export interface Api {
   auth: {
     login: (username: string, password: string) => Promise<AuthUser | null>
@@ -63,6 +78,12 @@ export interface Api {
   }
   file: {
     save: (req: { defaultName: string; base64: string }) => Promise<Res & { path?: string }>
+  }
+  attach: {
+    upload: () => Promise<Res & { files?: FileRef[] }>
+    sync: (input: { scope: string; refKey: string; files: FileRef[] }) => Promise<Res>
+    list: (input: { scope: string; refKey: string }) => Promise<Attachment[]>
+    open: (filename: string) => Promise<Res>
   }
   update: {
     onStatus: (cb: (data: UpdateStatus) => void) => () => void

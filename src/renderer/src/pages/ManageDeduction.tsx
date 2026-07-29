@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Save, Eraser, RefreshCw, Trash2, Pencil, Scale, Search } from 'lucide-react'
 import type { Deduction, WoListItem } from '../lib/types'
-import { Field, TextInput, NumberInput, DateInput, ComboBox, Select, DataTable, type Column } from '../components/ui'
+import { Field, TextInput, NumberInput, DateInput, EditableCombo, Select, DataTable, AttachmentBar, type Column, type FileRef } from '../components/ui'
 import { formatAmt, formatDate, financialYear, toNum, todayISO, errText, fail } from '../lib/format'
+
+// stable key that ties attachments to a deduction record
+const rk = (fy: string, wo: string, inv: string): string => [fy, wo, inv].join('::')
 import DownloadMenu from '../components/DownloadMenu'
 import type { DownloadPayload } from '../lib/download'
 
@@ -30,6 +33,7 @@ export default function ManageDeduction(): React.JSX.Element {
   const [sel, setSel] = useState(-1)
   const [editId, setEditId] = useState<number | null>(null)
   const [form, setForm] = useState({ ...blank })
+  const [attachments, setAttachments] = useState<FileRef[]>([])
 
   async function reload(): Promise<void> {
     const [d, n] = await Promise.all([window.api.ded.list(), window.api.wo.names()])
@@ -89,6 +93,7 @@ export default function ManageDeduction(): React.JSX.Element {
     setForm({ ...blank, deduct_date: todayISO() })
     setEditId(null)
     setSel(-1)
+    setAttachments([])
   }
 
   function payload(): Parameters<typeof window.api.ded.save>[0] {
@@ -118,6 +123,11 @@ export default function ManageDeduction(): React.JSX.Element {
         return
       const res = await window.api.ded.save(payload())
       if (res.ok) {
+        await window.api.attach.sync({
+          scope: 'deduction',
+          refKey: rk(finYear, form.work_order_no.trim(), form.invoice_no.trim()),
+          files: attachments
+        })
         toast.success(res.message)
         clear()
         reload()
@@ -144,6 +154,11 @@ export default function ManageDeduction(): React.JSX.Element {
       hse_debit: String(r.hse_debit || ''),
       hse_credit: String(r.hse_credit || '')
     })
+    window.api.attach
+      .list({ scope: 'deduction', refKey: rk(r.fin_year, r.work_order_no, r.invoice_no) })
+      .then((list) =>
+        setAttachments(list.map((a) => ({ filename: a.filename, originalName: a.original_name || a.filename })))
+      )
   }
 
   async function update(): Promise<void> {
@@ -151,6 +166,11 @@ export default function ManageDeduction(): React.JSX.Element {
     try {
       const res = await window.api.ded.update({ ...payload(), id: editId })
       if (res.ok) {
+        await window.api.attach.sync({
+          scope: 'deduction',
+          refKey: rk(finYear, form.work_order_no.trim(), form.invoice_no.trim()),
+          files: attachments
+        })
         toast.success(res.message)
         clear()
         reload()
@@ -317,7 +337,7 @@ export default function ManageDeduction(): React.JSX.Element {
 
         <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-6">
           <Field label="Work Order No">
-            <ComboBox
+            <EditableCombo
               value={form.work_order_no}
               onChange={pickWo}
               options={names.map((n) => n.work_order_no)}
@@ -366,6 +386,9 @@ export default function ManageDeduction(): React.JSX.Element {
           <Field label="Description" className="sm:col-span-2 lg:col-span-4">
             <TextInput value={form.description} onChange={(e) => set('description', e.target.value)} />
           </Field>
+          <div className="border-t border-slate-300 pt-2 sm:col-span-2 lg:col-span-6">
+            <AttachmentBar files={attachments} onChange={setAttachments} />
+          </div>
           <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
             {editId ? (
               <button className="btn-primary flex-1" onClick={update}>

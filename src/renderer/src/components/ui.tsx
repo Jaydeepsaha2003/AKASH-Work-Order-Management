@@ -1,9 +1,88 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown, ChevronUp, ChevronsUpDown, Search, Check, CalendarDays, X } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronUp,
+  ChevronsUpDown,
+  Search,
+  Check,
+  CalendarDays,
+  X,
+  Paperclip,
+  FileText
+} from 'lucide-react'
 import { formatDate, toISODate, formatAmt } from '../lib/format'
 
 export function cn(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(' ')
+}
+
+export interface FileRef {
+  filename: string
+  originalName: string
+}
+
+// Attach / view / remove PDF files. The parent owns the list and persists it
+// (via window.api.attach.sync) when its record is saved.
+export function AttachmentBar({
+  files,
+  onChange,
+  label = 'Attachments (PDF)'
+}: {
+  files: FileRef[]
+  onChange: (next: FileRef[]) => void
+  label?: string
+}): React.JSX.Element {
+  async function add(): Promise<void> {
+    const res = await window.api.attach.upload()
+    if (res.ok && res.files?.length) {
+      const seen = new Set(files.map((f) => f.filename))
+      onChange([...files, ...res.files.filter((f) => !seen.has(f.filename))])
+    }
+  }
+  return (
+    <div>
+      <div className="mb-1 flex items-center gap-2">
+        <span className="field-label">{label}</span>
+        <button
+          type="button"
+          onClick={add}
+          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[13px] font-semibold text-brand-700 transition hover:border-brand-400 hover:bg-brand-50"
+        >
+          <Paperclip className="h-3.5 w-3.5" /> Attach PDF
+        </button>
+      </div>
+      {files.length === 0 ? (
+        <div className="text-[13px] text-slate-400">No files attached.</div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {files.map((f) => (
+            <span
+              key={f.filename}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[13px]"
+            >
+              <button
+                type="button"
+                title="Open PDF"
+                onClick={() => window.api.attach.open(f.filename)}
+                className="inline-flex items-center gap-1 font-medium text-slate-700 hover:text-brand-700"
+              >
+                <FileText className="h-3.5 w-3.5 text-rose-500" />
+                <span className="max-w-[180px] truncate">{f.originalName}</span>
+              </button>
+              <button
+                type="button"
+                title="Remove"
+                onClick={() => onChange(files.filter((x) => x.filename !== f.filename))}
+                className="text-slate-400 transition hover:text-rose-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 // Centered modal dialog. Click the backdrop or press Escape to close.

@@ -1,5 +1,6 @@
 import { app, dialog, BrowserWindow } from 'electron'
-import { existsSync, copyFileSync, rmSync } from 'fs'
+import { join } from 'path'
+import { existsSync, copyFileSync, rmSync, mkdirSync, readdirSync, unlinkSync } from 'fs'
 import Database from 'better-sqlite3'
 import { getDb, getDbPath, closeDb } from './db'
 
@@ -14,6 +15,47 @@ function stamp(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(
     d.getMinutes()
   )}`
+}
+
+function stampFull(): string {
+  const d = new Date()
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(
+    d.getMinutes()
+  )}${pad(d.getSeconds())}`
+}
+
+// The project's Backup folder (created on demand), alongside the database.
+export function backupDir(): string {
+  const dir = join(app.getPath('userData'), 'Backup')
+  mkdirSync(dir, { recursive: true })
+  return dir
+}
+
+// Write a consistent snapshot of the DB into the Backup folder. Called on app
+// open and close. Synchronous & safe: checkpoint the WAL, then copy the file.
+export function autoBackup(reason: 'open' | 'close'): void {
+  try {
+    const d = getDb()
+    d.pragma('wal_checkpoint(TRUNCATE)')
+    const dir = backupDir()
+    copyFileSync(getDbPath(), join(dir, `akash-wom-${reason}-${stampFull()}.sqlite`))
+    // keep only the most recent 30 auto-backups
+    const files = readdirSync(dir)
+      .filter((f) => f.startsWith('akash-wom-') && f.endsWith('.sqlite'))
+      .sort()
+    while (files.length > 30) {
+      const old = files.shift()
+      if (old) {
+        try {
+          unlinkSync(join(dir, old))
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  } catch {
+    /* backups are best-effort; never block app start/quit */
+  }
 }
 
 // Save a consistent copy of the SQLite database (includes WAL) to a user-chosen file.

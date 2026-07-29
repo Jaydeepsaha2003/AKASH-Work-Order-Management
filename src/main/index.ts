@@ -3,6 +3,7 @@ import { join } from 'path'
 import { getDb } from './db'
 import { registerIpc } from './ipc'
 import { initUpdater } from './updater'
+import { autoBackup } from './backup'
 
 // Use dd/mm/yyyy in native date pickers
 app.commandLine.appendSwitch('lang', 'en-GB')
@@ -55,6 +56,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   getDb() // initialise DB + seed users
+  autoBackup('open') // snapshot into the Backup folder on startup
   registerIpc()
   createWindow()
   initUpdater(() => mainWindow)
@@ -62,6 +64,14 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+// snapshot into the Backup folder on close (best-effort, runs once)
+let didCloseBackup = false
+app.on('before-quit', () => {
+  if (didCloseBackup) return
+  didCloseBackup = true
+  autoBackup('close')
 })
 
 app.on('window-all-closed', () => {

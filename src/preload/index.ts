@@ -36,6 +36,16 @@ const api = {
   file: {
     save: (req: { defaultName: string; base64: string }) => ipcRenderer.invoke('file:save', req)
   },
+  attach: {
+    upload: () => ipcRenderer.invoke('attach:upload'),
+    sync: (input: {
+      scope: string
+      refKey: string
+      files: { filename: string; originalName: string }[]
+    }) => ipcRenderer.invoke('attach:sync', input),
+    list: (input: { scope: string; refKey: string }) => ipcRenderer.invoke('attach:list', input),
+    open: (filename: string) => ipcRenderer.invoke('attach:open', { filename })
+  },
   update: {
     onStatus: (cb: (data: unknown) => void) => {
       const listener = (_e: unknown, data: unknown): void => cb(data)

@@ -2,9 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Save, Eraser, MousePointerClick, FilePlus2, Search, ReceiptText } from 'lucide-react'
 import type { WorkOrder } from '../lib/types'
-import { Field, TextInput, NumberInput, DateInput, DataTable, type Column } from '../components/ui'
+import { Field, TextInput, NumberInput, DateInput, DataTable, AttachmentBar, type Column, type FileRef } from '../components/ui'
 import { formatAmt, formatDate, financialYear, toNum, todayISO, errText, fail } from '../lib/format'
 import { StatusBadge } from './CreateWO'
+
+// stable key that ties attachments to a work-order/invoice record
+const rk = (fy: string, wo: string, inv: string): string => [fy, wo, inv].join('::')
 
 const blankDed = {
   income_tax: '',
@@ -29,6 +32,7 @@ export default function UpdateInvoice(): React.JSX.Element {
   const [picked, setPicked] = useState<WorkOrder | null>(null)
   const [recDate, setRecDate] = useState(todayISO())
   const [ded, setDed] = useState({ ...blankDed })
+  const [attachments, setAttachments] = useState<FileRef[]>([])
 
   async function reload(): Promise<void> {
     setRows(await window.api.wo.list())
@@ -71,6 +75,11 @@ export default function UpdateInvoice(): React.JSX.Element {
 
   function pick(r: WorkOrder): void {
     setPicked(r)
+    window.api.attach
+      .list({ scope: 'wo', refKey: rk(r.fin_year, r.work_order_no, r.invoice_no) })
+      .then((list) =>
+        setAttachments(list.map((a) => ({ filename: a.filename, originalName: a.original_name || a.filename })))
+      )
     if (editMode && (r.wo_status || '').toLowerCase() === 'received') {
       // load existing deduction values for editing
       setRecDate(r.rec_date || todayISO())
@@ -100,6 +109,7 @@ export default function UpdateInvoice(): React.JSX.Element {
     setDed({ ...blankDed })
     setRecDate(todayISO())
     setSel(-1)
+    setAttachments([])
   }
 
   async function save(): Promise<void> {
@@ -128,6 +138,11 @@ export default function UpdateInvoice(): React.JSX.Element {
         ? await window.api.inv.update(payload)
         : await window.api.inv.save(payload)
       if (res.ok) {
+        await window.api.attach.sync({
+          scope: 'wo',
+          refKey: rk(picked.fin_year, picked.work_order_no, picked.invoice_no),
+          files: attachments
+        })
         toast.success(res.message)
         clear()
         reload()
@@ -277,6 +292,9 @@ export default function UpdateInvoice(): React.JSX.Element {
               value={formatAmt(netAmount)}
             />
           </Field>
+          <div className="border-t border-slate-300 pt-2 sm:col-span-2 lg:col-span-5">
+            <AttachmentBar files={attachments} onChange={setAttachments} />
+          </div>
         </div>
 
         <div className="mt-3 flex gap-2">

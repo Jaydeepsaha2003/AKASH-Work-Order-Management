@@ -25,7 +25,7 @@ export interface NavItem {
 // Primary items shown in the sidebar
 export const NAV_ITEMS: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', subtitle: 'Overview & reminders', icon: LayoutDashboard },
-  { key: 'create', label: 'Create WO', subtitle: 'Add work orders & invoices', icon: FilePlus2 },
+  { key: 'create', label: 'Create Invoice', subtitle: 'Add work orders & invoices', icon: FilePlus2 },
   { key: 'invoice', label: 'Update Invoice', subtitle: 'Record receipts & deductions', icon: ReceiptText },
   { key: 'view', label: 'View Details', subtitle: 'Full register & reports', icon: Table2 },
   { key: 'deduction', label: 'Manage Deduction', subtitle: 'SD / HSE / PRS ledger', icon: Scale },

@@ -18,6 +18,7 @@ import {
 import { verifyLogin, changePassword } from './auth'
 import { exportToExcel, saveBinaryFile, type ExportRequest } from './exporter'
 import { importExcel, importWorkOrders } from './importexcel'
+import { uploadPdfs, syncAttachments, listAttachments, openAttachment } from './attachments'
 import { backupDatabase, restoreDatabase } from './backup'
 import {
   listCompanies,
@@ -145,6 +146,14 @@ export function registerIpc(): void {
   handle('excel:export', (a: ExportRequest, win) => exportToExcel(win, a))
   handle('excel:import', (a: { mode: 'append' | 'replace' }, win) => importExcel(win, a))
   handle('file:save', (a: { defaultName: string; base64: string }, win) => saveBinaryFile(win, a))
+
+  // PDF attachments (stored in the uploads folder, linked to WO/deduction records)
+  handle('attach:upload', (_a, win) => uploadPdfs(win))
+  handle('attach:sync', (a: { scope: string; refKey: string; files: { filename: string; originalName: string }[] }) =>
+    syncAttachments(a)
+  )
+  handle('attach:list', (a: { scope: string; refKey: string }) => listAttachments(a))
+  handle('attach:open', (a: { filename: string }) => openAttachment(a))
 
   // Companies (multi-tenant)
   handle('company:list', () => listCompanies())

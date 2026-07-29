@@ -101,6 +101,16 @@ CREATE TABLE IF NOT EXISTS activity_log (
   entity       TEXT,   -- Work Order / Invoice / Deduction / Company / …
   summary      TEXT    -- human-readable details
 );
+
+CREATE TABLE IF NOT EXISTS attachments (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_id    INTEGER NOT NULL,
+  scope         TEXT NOT NULL,          -- 'wo' | 'deduction'
+  ref_key       TEXT NOT NULL,          -- fin_year::work_order_no::invoice_no
+  filename      TEXT NOT NULL,          -- stored file name in the uploads folder
+  original_name TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `
 
 export const INDEX_SQL = `
@@ -110,4 +120,5 @@ CREATE INDEX IF NOT EXISTS idx_wo_no ON workorders (company_id, work_order_no);
 CREATE INDEX IF NOT EXISTS idx_ded_company ON deductions (company_id);
 CREATE INDEX IF NOT EXISTS idx_ded_wo ON deductions (company_id, work_order_no);
 CREATE INDEX IF NOT EXISTS idx_activity_ts ON activity_log (ts DESC);
+CREATE INDEX IF NOT EXISTS idx_attach_ref ON attachments (company_id, scope, ref_key);
 `

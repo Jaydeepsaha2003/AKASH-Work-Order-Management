@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Save, Eraser, Pencil, RefreshCw, Trash2, CalendarDays, CalendarRange, FilePlus2, Search, Upload, FileDown, Loader2 } from 'lucide-react'
 import type { WorkOrder } from '../lib/types'
-import { Field, TextInput, NumberInput, DateInput, DataTable, Select, EditableCombo, type Column } from '../components/ui'
+import { Field, TextInput, NumberInput, DateInput, DataTable, Select, EditableCombo, AttachmentBar, type Column, type FileRef } from '../components/ui'
 import DownloadMenu from '../components/DownloadMenu'
 import type { DownloadPayload } from '../lib/download'
 import {
@@ -26,6 +26,9 @@ const blank = {
   gst_amt: '',
   wo_name: ''
 }
+
+// stable key that ties attachments to a work-order/invoice record
+const rk = (fy: string, wo: string, inv: string): string => [fy, wo, inv].join('::')
 
 // Columns for the Create WO Excel import/template (must match the main-process importer)
 const WO_TEMPLATE_HEADERS = [
@@ -65,6 +68,7 @@ export default function CreateWO(): React.JSX.Element {
   const [woStatus, setWoStatus] = useState('Created')
   const [cancelRemarks, setCancelRemarks] = useState('')
   const [importing, setImporting] = useState(false)
+  const [attachments, setAttachments] = useState<FileRef[]>([])
 
   async function reload(): Promise<void> {
     const [list, nm] = await Promise.all([window.api.wo.list(), window.api.wo.names()])
@@ -147,6 +151,7 @@ export default function CreateWO(): React.JSX.Element {
     setSel(-1)
     setWoStatus('Created')
     setCancelRemarks('')
+    setAttachments([])
   }
 
   async function save(): Promise<void> {
@@ -169,6 +174,11 @@ export default function CreateWO(): React.JSX.Element {
         wo_name: form.wo_name || null
       })
       if (res.ok) {
+        await window.api.attach.sync({
+          scope: 'wo',
+          refKey: rk(finYear, form.work_order_no.trim(), form.invoice_no.trim()),
+          files: attachments
+        })
         toast.success(res.message)
         clear()
         reload()
@@ -199,6 +209,11 @@ export default function CreateWO(): React.JSX.Element {
       wo_name: r.wo_name || ''
     })
     window.scrollTo?.({ top: 0 })
+    window.api.attach
+      .list({ scope: 'wo', refKey: rk(r.fin_year, r.work_order_no, r.invoice_no) })
+      .then((list) =>
+        setAttachments(list.map((a) => ({ filename: a.filename, originalName: a.original_name || a.filename })))
+      )
     toast.info('Edit mode enabled. Fin-Year and Work Order No are locked.')
   }
 
@@ -221,6 +236,11 @@ export default function CreateWO(): React.JSX.Element {
         cancel_remarks: cancelRemarks || null
       })
       if (res.ok) {
+        await window.api.attach.sync({
+          scope: 'wo',
+          refKey: rk(finYear, form.work_order_no.trim(), form.invoice_no.trim()),
+          files: attachments
+        })
         toast.success(res.message)
         clear()
         reload()
@@ -420,6 +440,10 @@ export default function CreateWO(): React.JSX.Element {
                 <TextInput value={cancelRemarks} onChange={(e) => setCancelRemarks(e.target.value)} />
               </Field>
             )}
+
+            <div className="mt-1 border-t border-slate-300 pt-2">
+              <AttachmentBar files={attachments} onChange={setAttachments} />
+            </div>
           </div>
         </div>
 
