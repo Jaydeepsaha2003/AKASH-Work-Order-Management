@@ -548,6 +548,8 @@ export interface Column<T> {
   tabular?: boolean
   // Use a lighter (550) weight instead of the default semibold (600)
   light?: boolean
+  // Allow the cell text to wrap onto multiple lines (constrained to the column width)
+  wrap?: boolean
 }
 
 export function DataTable<T>({
@@ -718,11 +720,15 @@ export function DataTable<T>({
                 <td
                   key={c.key}
                   className={cn(
-                    'whitespace-nowrap border-l border-slate-200 px-3 py-1.5 text-slate-700 transition-colors first:border-l-0 group-hover:bg-brand-50/60',
+                    'border-l border-slate-200 px-3 py-1.5 text-slate-700 transition-colors first:border-l-0 group-hover:bg-brand-50/60',
+                    c.wrap ? 'whitespace-normal align-top leading-snug' : 'whitespace-nowrap',
                     c.light ? 'font-medium' : 'font-semibold',
                     (c.numeric || c.tabular) && 'tabular'
                   )}
-                  style={{ textAlign: c.align ?? (c.numeric ? 'right' : 'left') }}
+                  style={{
+                    textAlign: c.align ?? (c.numeric ? 'right' : 'left'),
+                    ...(c.wrap && c.width ? { maxWidth: c.width } : {})
+                  }}
                 >
                   {c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key] ?? '')}
                 </td>

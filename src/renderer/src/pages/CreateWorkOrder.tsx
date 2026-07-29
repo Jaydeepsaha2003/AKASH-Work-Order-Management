@@ -87,6 +87,8 @@ export default function CreateWorkOrder(): React.JSX.Element {
   const [editId, setEditId] = useState<number | null>(null)
   const [form, setForm] = useState({ ...blank })
   const [importing, setImporting] = useState(false)
+  // until the user edits Executed Value, it mirrors the WO Value by default
+  const [executedTouched, setExecutedTouched] = useState(false)
 
   async function reload(): Promise<void> {
     setRows(await window.api.wom.list())
@@ -167,6 +169,7 @@ export default function CreateWorkOrder(): React.JSX.Element {
   function clear(): void {
     setForm({ ...blank, wo_date: todayISO() })
     setEditId(null)
+    setExecutedTouched(false)
   }
 
   function payload(): Parameters<typeof window.api.wom.create>[0] {
@@ -214,6 +217,7 @@ export default function CreateWorkOrder(): React.JSX.Element {
       on_site: r.on_site || 'In Process',
       remarks: r.remarks || ''
     })
+    setExecutedTouched(true) // keep the saved executed value as-is while editing
     window.scrollTo?.({ top: 9999 })
   }
 
@@ -275,7 +279,7 @@ export default function CreateWorkOrder(): React.JSX.Element {
 
   const columns: Column<WoRow>[] = [
     { key: 'sl', header: 'SL', width: 46, tabular: true, align: 'right', light: true },
-    { key: 'name_of_work', header: 'Name of Work', width: 220, render: (r) => r.name_of_work || '' },
+    { key: 'name_of_work', header: 'Name of Work', width: 240, wrap: true, render: (r) => r.name_of_work || '' },
     { key: 'job_location', header: 'Job Location', width: 110, light: true, render: (r) => r.job_location || '' },
     { key: 'work_order_no', header: 'Work Order', width: 100, tabular: true },
     { key: 'wo_date', header: 'WO Dt', width: 92, tabular: true, light: true, render: (r) => formatDate(r.wo_date) },
@@ -475,10 +479,25 @@ export default function CreateWorkOrder(): React.JSX.Element {
             <DateInput iso={form.wo_date} onISO={(v) => set('wo_date', v)} />
           </Field>
           <Field label="WO Value">
-            <NumberInput value={form.wo_value} onValue={(v) => set('wo_value', v)} />
+            <NumberInput
+              value={form.wo_value}
+              onValue={(v) =>
+                setForm((f) => ({
+                  ...f,
+                  wo_value: v,
+                  executed_value: executedTouched ? f.executed_value : v
+                }))
+              }
+            />
           </Field>
           <Field label="Executed Value">
-            <NumberInput value={form.executed_value} onValue={(v) => set('executed_value', v)} />
+            <NumberInput
+              value={form.executed_value}
+              onValue={(v) => {
+                setExecutedTouched(true)
+                set('executed_value', v)
+              }}
+            />
           </Field>
           <Field label="Period (Months)">
             <NumberInput value={form.period_months} onValue={(v) => set('period_months', v)} />
