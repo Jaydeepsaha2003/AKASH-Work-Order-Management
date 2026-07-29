@@ -508,8 +508,8 @@ export async function importWoMasterFromPath(
   const ins = db.prepare(
     `INSERT INTO wo_master
       (company_id, name_of_work, job_location, work_order_no, wo_date, wo_value, executed_value,
-       period_months, site_handover_date, on_site, remarks)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       period_months, period_unit, site_handover_date, on_site, remarks)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Months', ?, ?, ?)`
   )
   const cellOf = (row: ExcelJS.Row, key: string): ExcelJS.CellValue =>
     col[key] !== undefined ? row.getCell(col[key]).value : null

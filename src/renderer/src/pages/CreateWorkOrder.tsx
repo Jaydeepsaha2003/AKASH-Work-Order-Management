@@ -37,14 +37,23 @@ function toISO(dt: Date): string {
   const p = (n: number): string => String(n).padStart(2, '0')
   return `${dt.getFullYear()}-${p(dt.getMonth() + 1)}-${p(dt.getDate())}`
 }
-// completion = site handover + N months, minus one day
-function completionISO(handover: string | null, months: number): string {
+// completion = site handover + period (days/months/years), minus one day
+function completionISO(handover: string | null, value: number, unit: string | null): string {
   const p = parseISO(handover)
-  if (!p || !months) return ''
+  if (!p || !value) return ''
   const dt = new Date(p.y, p.mo - 1, p.d)
-  dt.setMonth(dt.getMonth() + Math.round(months))
+  const u = (unit || 'Months').toLowerCase()
+  if (u.startsWith('day')) dt.setDate(dt.getDate() + Math.round(value))
+  else if (u.startsWith('year')) dt.setFullYear(dt.getFullYear() + Math.round(value))
+  else dt.setMonth(dt.getMonth() + Math.round(value))
   dt.setDate(dt.getDate() - 1)
   return toISO(dt)
+}
+
+const PERIOD_UNITS = ['Days', 'Months', 'Years']
+function unitShort(u: string | null): string {
+  const s = (u || 'Months').toLowerCase()
+  return s.startsWith('day') ? 'D' : s.startsWith('year') ? 'Y' : 'M'
 }
 function daysFromToday(iso: string): number | null {
   const p = parseISO(iso)
@@ -70,9 +79,10 @@ const blank = {
   work_order_no: '',
   wo_date: todayISO(),
   wo_value: '',
-  executed_value: '',
   period_months: '',
+  period_unit: 'Months',
   site_handover_date: '',
+  revised_handover_date: '',
   on_site: 'In Process',
   remarks: ''
 }
@@ -87,11 +97,19 @@ export default function CreateWorkOrder(): React.JSX.Element {
   const [editId, setEditId] = useState<number | null>(null)
   const [form, setForm] = useState({ ...blank })
   const [importing, setImporting] = useState(false)
-  // until the user edits Executed Value, it mirrors the WO Value by default
-  const [executedTouched, setExecutedTouched] = useState(false)
+  // executed value per work order = sum of matched invoices' basic value
+  const [execMap, setExecMap] = useState<Record<string, number>>({})
 
   async function reload(): Promise<void> {
-    setRows(await window.api.wom.list())
+    const [list, invoices] = await Promise.all([window.api.wom.list(), window.api.wo.list()])
+    setRows(list)
+    const map: Record<string, number> = {}
+    for (const inv of invoices) {
+      const k = inv.work_order_no || ''
+      if (!k) continue
+      map[k] = (map[k] || 0) + (inv.gross_value || 0)
+    }
+    setExecMap(map)
   }
 
   async function importExcel(): Promise<void> {
@@ -117,22 +135,26 @@ export default function CreateWorkOrder(): React.JSX.Element {
   // enrich every row with the computed columns
   const enriched = useMemo<WoRow[]>(() => {
     return rows.map((r, i) => {
-      const completion_date = completionISO(r.site_handover_date, r.period_months)
+      // completion is measured from the revised handover date when present
+      const effectiveHandover = r.revised_handover_date || r.site_handover_date
+      const completion_date = completionISO(effectiveHandover, r.period_months, r.period_unit)
       const balance_days = completion_date ? daysFromToday(completion_date) : null
       const consumed = r.site_handover_date ? daysFromToday(r.site_handover_date) : null
+      const executed = execMap[r.work_order_no] ?? 0 // always from matched invoices
       const status: WoRow['status'] =
         balance_days === null ? '—' : balance_days < 0 ? 'Expired' : 'Running'
       return {
         ...r,
         sl: i + 1,
-        balance_value: (r.wo_value || 0) - (r.executed_value || 0),
+        executed_value: executed,
+        balance_value: (r.wo_value || 0) - executed,
         completion_date,
         balance_days,
         days_consumed: consumed === null ? null : -consumed,
         status
       }
     })
-  }, [rows])
+  }, [rows, execMap])
 
   const filtered = useMemo(() => {
     let base = enriched
@@ -169,7 +191,6 @@ export default function CreateWorkOrder(): React.JSX.Element {
   function clear(): void {
     setForm({ ...blank, wo_date: todayISO() })
     setEditId(null)
-    setExecutedTouched(false)
   }
 
   function payload(): Parameters<typeof window.api.wom.create>[0] {
@@ -179,9 +200,12 @@ export default function CreateWorkOrder(): React.JSX.Element {
       work_order_no: form.work_order_no.trim(),
       wo_date: form.wo_date || null,
       wo_value: toNum(form.wo_value),
-      executed_value: toNum(form.executed_value),
+      // executed value is derived from matched invoices (stored as a snapshot)
+      executed_value: execMap[form.work_order_no.trim()] ?? 0,
       period_months: toNum(form.period_months),
+      period_unit: form.period_unit || 'Months',
       site_handover_date: form.site_handover_date || null,
+      revised_handover_date: form.revised_handover_date || null,
       on_site: form.on_site || null,
       remarks: form.remarks || null
     }
@@ -211,13 +235,13 @@ export default function CreateWorkOrder(): React.JSX.Element {
       work_order_no: r.work_order_no || '',
       wo_date: r.wo_date || todayISO(),
       wo_value: String(r.wo_value ?? ''),
-      executed_value: String(r.executed_value ?? ''),
       period_months: String(r.period_months ?? ''),
+      period_unit: r.period_unit || 'Months',
       site_handover_date: r.site_handover_date || '',
+      revised_handover_date: r.revised_handover_date || '',
       on_site: r.on_site || 'In Process',
       remarks: r.remarks || ''
     })
-    setExecutedTouched(true) // keep the saved executed value as-is while editing
     window.scrollTo?.({ top: 9999 })
   }
 
@@ -248,8 +272,9 @@ export default function CreateWorkOrder(): React.JSX.Element {
         'WO Value',
         'Executed Value',
         'Balance Value',
-        'Period (Months)',
+        'Period',
         'Site Handover',
+        'Revised Handover',
         'Completion Date',
         'Balance Days',
         'Status',
@@ -265,8 +290,9 @@ export default function CreateWorkOrder(): React.JSX.Element {
         r.wo_value,
         r.executed_value,
         r.balance_value,
-        r.period_months,
+        `${r.period_months || 0} ${r.period_unit || 'Months'}`,
         formatDate(r.site_handover_date),
+        formatDate(r.revised_handover_date),
         formatDate(r.completion_date),
         r.balance_days ?? '',
         r.status,
@@ -280,7 +306,7 @@ export default function CreateWorkOrder(): React.JSX.Element {
   const columns: Column<WoRow>[] = [
     { key: 'sl', header: 'SL', width: 46, tabular: true, align: 'right', light: true },
     { key: 'name_of_work', header: 'Name of Work', width: 240, wrap: true, render: (r) => r.name_of_work || '' },
-    { key: 'job_location', header: 'Job Location', width: 110, light: true, render: (r) => r.job_location || '' },
+    { key: 'job_location', header: 'Job Location', width: 130, wrap: true, light: true, render: (r) => r.job_location || '' },
     { key: 'work_order_no', header: 'Work Order', width: 100, tabular: true },
     { key: 'wo_date', header: 'WO Dt', width: 92, tabular: true, light: true, render: (r) => formatDate(r.wo_date) },
     { key: 'wo_value', header: 'WO Value', width: 120, numeric: true, render: (r) => formatAmt(r.wo_value) },
@@ -296,8 +322,21 @@ export default function CreateWorkOrder(): React.JSX.Element {
         </span>
       )
     },
-    { key: 'period_months', header: 'Period (M)', width: 78, tabular: true, align: 'right', light: true },
+    { key: 'period_months', header: 'Period', width: 92, tabular: true, align: 'right', light: true, render: (r) => `${r.period_months || 0} ${unitShort(r.period_unit)}` },
     { key: 'site_handover_date', header: 'Handover', width: 92, tabular: true, light: true, render: (r) => formatDate(r.site_handover_date) },
+    {
+      key: 'revised_handover_date',
+      header: 'Revised H/O',
+      width: 96,
+      tabular: true,
+      light: true,
+      render: (r) =>
+        r.revised_handover_date ? (
+          <span className="font-semibold text-amber-600">{formatDate(r.revised_handover_date)}</span>
+        ) : (
+          '—'
+        )
+    },
     { key: 'completion_date', header: 'Completion', width: 92, tabular: true, light: true, render: (r) => formatDate(r.completion_date) },
     {
       key: 'balance_days',
@@ -427,7 +466,7 @@ export default function CreateWorkOrder(): React.JSX.Element {
         <DataTable
           columns={columns}
           rows={filtered}
-          minWidth={1720}
+          minWidth={1820}
           showTotals
           onRowDoubleClick={(_i, r) => beginEdit(r)}
           rowActions={(r) => (
@@ -479,31 +518,40 @@ export default function CreateWorkOrder(): React.JSX.Element {
             <DateInput iso={form.wo_date} onISO={(v) => set('wo_date', v)} />
           </Field>
           <Field label="WO Value">
-            <NumberInput
-              value={form.wo_value}
-              onValue={(v) =>
-                setForm((f) => ({
-                  ...f,
-                  wo_value: v,
-                  executed_value: executedTouched ? f.executed_value : v
-                }))
-              }
+            <NumberInput value={form.wo_value} onValue={(v) => set('wo_value', v)} />
+          </Field>
+          <Field label="Executed Value (from invoices)">
+            <TextInput
+              readOnlyLook
+              readOnly
+              className="tabular text-right font-semibold"
+              value={formatAmt(execMap[form.work_order_no.trim()] ?? 0)}
             />
           </Field>
-          <Field label="Executed Value">
-            <NumberInput
-              value={form.executed_value}
-              onValue={(v) => {
-                setExecutedTouched(true)
-                set('executed_value', v)
-              }}
-            />
-          </Field>
-          <Field label="Period (Months)">
-            <NumberInput value={form.period_months} onValue={(v) => set('period_months', v)} />
+          <Field label="Period">
+            <div className="flex gap-2">
+              <NumberInput
+                className="flex-1"
+                value={form.period_months}
+                onValue={(v) => set('period_months', v)}
+              />
+              <div className="w-28 shrink-0">
+                <Select
+                  value={form.period_unit}
+                  onChange={(v) => set('period_unit', v)}
+                  options={PERIOD_UNITS.map((u) => ({ value: u, label: u }))}
+                />
+              </div>
+            </div>
           </Field>
           <Field label="Site Handover Date">
             <DateInput iso={form.site_handover_date} onISO={(v) => set('site_handover_date', v)} />
+          </Field>
+          <Field label="Revised Handover Date">
+            <DateInput
+              iso={form.revised_handover_date}
+              onISO={(v) => set('revised_handover_date', v)}
+            />
           </Field>
           <Field label="On Site Status">
             <Select

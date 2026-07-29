@@ -121,9 +121,11 @@ CREATE TABLE IF NOT EXISTS wo_master (
   wo_date            TEXT,               -- ISO yyyy-mm-dd
   wo_value           REAL DEFAULT 0,
   executed_value     REAL DEFAULT 0,
-  period_months      REAL DEFAULT 0,
-  site_handover_date TEXT,               -- ISO yyyy-mm-dd
-  on_site            TEXT,               -- In Process / Under final / Completed
+  period_months        REAL DEFAULT 0,     -- period VALUE (unit stored separately)
+  period_unit          TEXT DEFAULT 'Months', -- Days | Months | Years
+  site_handover_date   TEXT,               -- ISO yyyy-mm-dd
+  revised_handover_date TEXT,              -- ISO yyyy-mm-dd (optional; shifts completion)
+  on_site              TEXT,               -- In Process / Under final / Completed
   remarks            TEXT,
   created_at         TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at         TEXT NOT NULL DEFAULT (datetime('now'))

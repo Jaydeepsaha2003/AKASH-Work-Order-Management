@@ -61,7 +61,9 @@ export interface WoMaster {
   wo_value: number
   executed_value: number
   period_months: number
+  period_unit: string | null
   site_handover_date: string | null
+  revised_handover_date: string | null
   on_site: string | null
   remarks: string | null
 }

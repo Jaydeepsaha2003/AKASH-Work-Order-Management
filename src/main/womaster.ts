@@ -10,7 +10,9 @@ export interface WoMaster {
   wo_value: number
   executed_value: number
   period_months: number
+  period_unit: string | null
   site_handover_date: string | null
+  revised_handover_date: string | null
   on_site: string | null
   remarks: string | null
 }
@@ -28,7 +30,7 @@ export function listWoMaster(): WoMaster[] {
   return getDb()
     .prepare(
       `SELECT id, name_of_work, job_location, work_order_no, wo_date, wo_value, executed_value,
-              period_months, site_handover_date, on_site, remarks
+              period_months, period_unit, site_handover_date, revised_handover_date, on_site, remarks
        FROM wo_master WHERE company_id = ? ORDER BY id ASC`
     )
     .all(getActiveCompanyId()) as WoMaster[]
@@ -39,8 +41,8 @@ export function createWoMaster(input: WoMasterInput): Res {
   db.prepare(
     `INSERT INTO wo_master
       (company_id, name_of_work, job_location, work_order_no, wo_date, wo_value, executed_value,
-       period_months, site_handover_date, on_site, remarks)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       period_months, period_unit, site_handover_date, revised_handover_date, on_site, remarks)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     getActiveCompanyId(),
     input.name_of_work,
@@ -50,7 +52,9 @@ export function createWoMaster(input: WoMasterInput): Res {
     num(input.wo_value),
     num(input.executed_value),
     num(input.period_months),
+    input.period_unit || 'Months',
     input.site_handover_date,
+    input.revised_handover_date,
     input.on_site,
     input.remarks
   )
@@ -62,8 +66,8 @@ export function updateWoMaster(id: number, input: WoMasterInput): Res {
     .prepare(
       `UPDATE wo_master SET
         name_of_work = ?, job_location = ?, work_order_no = ?, wo_date = ?, wo_value = ?,
-        executed_value = ?, period_months = ?, site_handover_date = ?, on_site = ?, remarks = ?,
-        updated_at = datetime('now')
+        executed_value = ?, period_months = ?, period_unit = ?, site_handover_date = ?,
+        revised_handover_date = ?, on_site = ?, remarks = ?, updated_at = datetime('now')
        WHERE id = ? AND company_id = ?`
     )
     .run(
@@ -74,7 +78,9 @@ export function updateWoMaster(id: number, input: WoMasterInput): Res {
       num(input.wo_value),
       num(input.executed_value),
       num(input.period_months),
+      input.period_unit || 'Months',
       input.site_handover_date,
+      input.revised_handover_date,
       input.on_site,
       input.remarks,
       id,

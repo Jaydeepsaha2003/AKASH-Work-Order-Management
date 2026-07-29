@@ -98,6 +98,14 @@ function runMigrations(d: Database.Database): void {
     tx()
   }
 
+  // 4b) wo_master: add newer columns for DBs created before they existed
+  if (hasColumn(d, 'wo_master', 'period_months') && !hasColumn(d, 'wo_master', 'period_unit')) {
+    d.exec("ALTER TABLE wo_master ADD COLUMN period_unit TEXT DEFAULT 'Months'")
+  }
+  if (hasColumn(d, 'wo_master', 'period_months') && !hasColumn(d, 'wo_master', 'revised_handover_date')) {
+    d.exec('ALTER TABLE wo_master ADD COLUMN revised_handover_date TEXT')
+  }
+
   // 5) Ensure an active-company setting exists
   const s = d.prepare("SELECT value FROM app_settings WHERE key = 'active_company_id'").get()
   if (!s) {
