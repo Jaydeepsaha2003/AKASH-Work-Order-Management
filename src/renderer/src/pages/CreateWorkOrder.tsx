@@ -315,7 +315,7 @@ export default function CreateWorkOrder(): React.JSX.Element {
     { key: 'name_of_work', header: 'Name of Work', width: 210, wrap: true, render: (r) => r.name_of_work || '' },
     { key: 'job_location', header: 'Job Location', width: 120, wrap: true, render: (r) => r.job_location || '' },
     { key: 'work_order_no', header: 'Work Order No', width: 100, wrap: true, tabular: true },
-    { key: 'wo_date', header: 'WO Date', width: 92, wrap: true, tabular: true, render: (r) => formatDate(r.wo_date) },
+    { key: 'wo_date', header: 'WO Date', width: 116, wrap: true, tabular: true, render: (r) => formatDate(r.wo_date) },
     { key: 'wo_value', header: 'WO Value', width: 118, wrap: true, numeric: true, render: (r) => formatAmt(r.wo_value) },
     { key: 'executed_value', header: 'Executed WO Value', width: 118, wrap: true, numeric: true, render: (r) => formatAmt(r.executed_value) },
     {
@@ -478,7 +478,7 @@ export default function CreateWorkOrder(): React.JSX.Element {
         <DataTable
           columns={columns}
           rows={filtered}
-          minWidth={1900}
+          minWidth={1924}
           showTotals
           uniformText
           onRowDoubleClick={(_i, r) => beginEdit(r)}

@@ -673,7 +673,7 @@ export function DataTable<T>({
                   title="Click to sort"
                   className={cn(
                     'cursor-pointer select-none border-l border-white/15 px-3 py-2.5 font-heading font-semibold transition first:border-l-0 hover:bg-white/10',
-                    uniformText ? 'whitespace-normal align-bottom text-[15px]' : 'whitespace-nowrap text-[13.5px]'
+                    uniformText ? 'whitespace-normal align-top text-[15px]' : 'whitespace-nowrap text-[13.5px]'
                   )}
                   style={{ width: c.width, textAlign: c.align ?? (c.numeric ? 'right' : 'left') }}
                 >
